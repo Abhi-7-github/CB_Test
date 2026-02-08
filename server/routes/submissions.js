@@ -4,6 +4,7 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
 const Question = require('../models/Question');
 const Submission = require('../models/Submission');
+const Score = require('../models/Score');
 
 const router = express.Router();
 
@@ -51,6 +52,61 @@ router.post('/questions/:id/submissions', upload.single('file'), async (req, res
     return res.status(201).json(saved);
   } catch (err) {
     return res.status(400).json({ message: 'Failed to upload submission', error: err.message });
+  }
+});
+
+router.post('/submit-test', async (req, res) => {
+  try {
+    const { studentEmail, responses } = req.body;
+
+    if (!studentEmail) {
+      return res.status(400).json({ message: 'Student email is required' });
+    }
+
+    // responses is expected to be an object: { questionId: selectedIndex }
+    const questionIds = Object.keys(responses || {});
+    // Fetch only MCQ questions that were answered (or all if we want to grade unanswered too, but user just asked for gained marks)
+    // Actually, we should probably fetch all questions to calculate total possible marks if needed, but let's stick to grading the submitted ones for now.
+    
+    const questions = await Question.find({ _id: { $in: questionIds }, type: 'mcq' });
+
+    let totalScore = 0;
+    let totalPossibleMarks = 0; // Of the questions answered. To get true total, we'd need to fetch all questions.
+    const scoreResponses = [];
+
+    // Create a map for quick lookup
+    const questionMap = new Map(questions.map(q => [q._id.toString(), q]));
+
+    for (const [qId, selectedIdx] of Object.entries(responses)) {
+        const question = questionMap.get(qId);
+        if (question) {
+            const isCorrect = Number(selectedIdx) === Number(question.correctAnswer);
+            const marks = isCorrect ? (question.marks || 1) : 0;
+            
+            totalScore += marks;
+            totalPossibleMarks += (question.marks || 1);
+            
+            scoreResponses.push({
+                questionId: question._id,
+                selectedOption: selectedIdx,
+                isCorrect,
+                marksObtained: marks
+            });
+        }
+    }
+
+    const newScore = new Score({
+      studentEmail,
+      score: totalScore,
+      totalMarks: totalPossibleMarks
+    });
+
+    await newScore.save();
+
+    res.status(200).json({ message: 'Test submitted', score: totalScore, totalMarks: totalPossibleMarks });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Failed to submit test', error: err.message });
   }
 });
 
