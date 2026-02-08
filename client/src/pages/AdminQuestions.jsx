@@ -3,17 +3,18 @@ import { API_ENDPOINTS } from '../api'
 import TextField from '../components/TextField'
 import TextAreaField from '../components/TextAreaField'
 
+import AdminNavbar from '../components/AdminNavbar'
+
 function AdminQuestions() {
   const [adminKey, setAdminKey] = useState('')
   const [isVerified, setIsVerified] = useState(false)
   const [verifyStatus, setVerifyStatus] = useState({ type: 'idle', message: '' })
-  const [resetEmail, setResetEmail] = useState('')
-  const [resetStatus, setResetStatus] = useState('')
+
   const [formData, setFormData] = useState({
     id: '',
     type: 'mcq',
     text: '',
-    options: '',
+    options: [''], // Initialize with one empty option
     correctAnswer: '',
     marks: '1',
     fileAccept: '',
@@ -22,11 +23,30 @@ function AdminQuestions() {
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [submitting, setSubmitting] = useState(false)
   const [verifying, setVerifying] = useState(false)
+  const [questions, setQuestions] = useState([])
+
+  useEffect(() => {
+    fetchQuestions()
+  }, [])
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.questions)
+      if (response.ok) {
+        const data = await response.json()
+        setQuestions(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch questions:', error)
+    }
+  }
 
   useEffect(() => {
     const verified = localStorage.getItem('adminVerified') === 'true'
+    const storedKey = localStorage.getItem('adminKey') || ''
     if (verified) {
       setIsVerified(true)
+      setAdminKey(storedKey)
     }
   }, [])
 
@@ -40,10 +60,7 @@ function AdminQuestions() {
     setStatus({ type: 'idle', message: '' })
 
     const options = formData.type === 'mcq'
-      ? formData.options
-          .split(',')
-          .map((item) => item.trim())
-          .filter(Boolean)
+      ? formData.options.filter((opt) => opt.trim())
       : []
 
     const parsedCorrectAnswer = Number(formData.correctAnswer)
@@ -89,12 +106,13 @@ function AdminQuestions() {
         id: '',
         type: 'mcq',
         text: '',
-        options: '',
+        options: [''],
         correctAnswer: '',
         marks: '1',
         fileAccept: '',
         fileMaxSizeMb: '5',
       })
+      fetchQuestions()
     } catch (err) {
       setStatus({ type: 'error', message: err.message })
     } finally {
@@ -120,6 +138,7 @@ function AdminQuestions() {
       }
 
       localStorage.setItem('adminVerified', 'true')
+      localStorage.setItem('adminKey', adminKey)
       setIsVerified(true)
       setVerifyStatus({ type: 'success', message: 'Admin key verified.' })
     } catch (err) {
@@ -130,18 +149,11 @@ function AdminQuestions() {
     }
   }
 
-  const handleResetAttempt = () => {
-    if (!resetEmail.trim()) {
-      setResetStatus('Enter a student email to reset.')
-      return
-    }
 
-    localStorage.removeItem(`testSubmitted:${resetEmail.trim().toLowerCase()}`)
-    setResetStatus('Attempt reset for this browser.')
-  }
 
   return (
     <div className="grid gap-4">
+      {isVerified && <AdminNavbar />}
       <div>
         <h1 className="text-xl font-semibold text-slate-900">Admin: Add Question</h1>
         <p className="mt-1 text-sm text-slate-500">
@@ -191,10 +203,10 @@ function AdminQuestions() {
         >
           <TextField
             id="question-id"
-            label="Question ID"
+            label="Question Number"
             value={formData.id}
             onChange={handleChange('id')}
-            placeholder="Q101"
+            placeholder="1"
           />
           <div className="grid gap-2">
             <label className="text-sm font-semibold text-slate-800" htmlFor="question-type">
@@ -221,23 +233,67 @@ function AdminQuestions() {
           />
           {formData.type === 'mcq' && (
             <>
-              <TextAreaField
-                id="question-options"
-                label="Options (comma separated)"
-                value={formData.options}
-                onChange={handleChange('options')}
-                placeholder="Option A, Option B, Option C, Option D"
-                required
-                rows={2}
-              />
-              <TextField
-                id="question-answer"
-                label="Correct Answer (index or text)"
-                value={formData.correctAnswer}
-                onChange={handleChange('correctAnswer')}
-                placeholder="0"
-                required
-              />
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-800">Options</label>
+                {formData.options.map((option, index) => (
+                  <div key={index} className="flex gap-2">
+                     <TextField
+                        id={`option-${index}`}
+                        value={option}
+                        onChange={(e) => {
+                          const newOptions = [...formData.options]
+                          newOptions[index] = e.target.value
+                          setFormData(prev => ({ ...prev, options: newOptions }))
+                        }}
+                        placeholder={`Option ${index + 1}`}
+                     />
+                     {formData.options.length > 1 && (
+                       <button
+                         type="button"
+                         onClick={() => {
+                           const newOptions = formData.options.filter((_, i) => i !== index)
+                           setFormData(prev => ({ ...prev, options: newOptions }))
+                         }}
+                         className="px-3 py-2 text-sm text-red-600 border border-slate-200 rounded hover:bg-red-50"
+                       >
+                         Remove
+                       </button>
+                     )}
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFormData(prev => ({ ...prev, options: [...prev.options, ''] }))
+                  }}
+                  className="w-fit px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded hover:bg-blue-50 mt-1"
+                >
+                  + Add Option
+                </button>
+              </div>
+              <div className="grid gap-2">
+                <label className="text-sm font-semibold text-slate-800" htmlFor="question-answer">
+                  Right Option
+                </label>
+                <select
+                  id="question-answer"
+                  value={formData.correctAnswer}
+                  onChange={handleChange('correctAnswer')}
+                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm"
+                  required
+                >
+                  <option value="">Select the correct option</option>
+                  {formData.options.map((opt, idx) => {
+                     const trimmed = opt.trim()
+                     if (!trimmed) return null
+                     return (
+                        <option key={idx} value={idx}>
+                          {trimmed}
+                        </option>
+                     )
+                  })}
+                </select>
+              </div>
             </>
           )}
           {formData.type === 'file' && (
@@ -282,33 +338,7 @@ function AdminQuestions() {
         </div>
       )}
 
-      {isVerified && (
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <p className="text-sm font-semibold text-slate-900">Reset Student Attempt</p>
-          <p className="mt-1 text-xs text-slate-500">
-            This resets attempts only in this browser.
-          </p>
-          <div className="mt-3 grid gap-2">
-            <TextField
-              id="reset-email"
-              label="Student Email"
-              value={resetEmail}
-              onChange={(event) => setResetEmail(event.target.value)}
-              placeholder="student@klu.ac.in"
-            />
-            <button
-              type="button"
-              onClick={handleResetAttempt}
-              className="w-fit rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
-            >
-              Reset Attempt
-            </button>
-            {resetStatus && (
-              <span className="text-xs font-semibold text-slate-600">{resetStatus}</span>
-            )}
-          </div>
-        </div>
-      )}
+
 
       {status.message && (
         <div
@@ -321,6 +351,40 @@ function AdminQuestions() {
           {status.message}
         </div>
       )}
+
+      {/* Questions List */}
+      <div className="mt-8">
+        <h2 className="text-lg font-semibold text-slate-900 mb-4">Existing Questions</h2>
+        <div className="space-y-4">
+          {questions.length === 0 ? (
+            <p className="text-sm text-slate-500">No questions found.</p>
+          ) : (
+            questions.map((q) => (
+              <div key={q._id} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded mb-2">
+                      {q.type.toUpperCase()}
+                    </span>
+                    <h3 className="text-md font-medium text-slate-900">{q.text}</h3>
+                    {q.type === 'mcq' && (
+                      <div className="mt-2 pl-4 border-l-2 border-slate-100">
+                        {q.options.map((opt, idx) => (
+                          <div key={idx} className={`text-sm ${idx === q.correctAnswer ? 'text-green-600 font-semibold' : 'text-slate-600'}`}>
+                            {opt} {idx === q.correctAnswer && '(Correct)'}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <p className="mt-2 text-xs text-slate-500">Marks: {q.marks}</p>
+                  </div>
+                  <span className="text-xs text-slate-400 font-mono">{q._id}</span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   )
 }

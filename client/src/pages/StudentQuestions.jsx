@@ -10,6 +10,8 @@ function StudentQuestions() {
   const [studentEmail, setStudentEmail] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' })
+  const [answers, setAnswers] = useState({})
+  const [result, setResult] = useState(null)
 
   useEffect(() => {
     let ignore = false
@@ -113,7 +115,7 @@ function StudentQuestions() {
     }
   }
 
-  const handleSubmitTest = () => {
+  const handleSubmitTest = async () => {
     if (!studentEmail) {
       setSubmitStatus({ type: 'error', message: 'Login required before submitting.' })
       return
@@ -124,9 +126,33 @@ function StudentQuestions() {
       return
     }
 
-    localStorage.setItem(`testSubmitted:${studentEmail}`, 'true')
-    setIsSubmitted(true)
-    setSubmitStatus({ type: 'success', message: 'Test submitted successfully.' })
+    setSubmitStatus({ type: 'loading', message: 'Submitting...' })
+    
+    try {
+      const response = await fetch(API_ENDPOINTS.submitTest, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            studentEmail,
+            responses: answers
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Submission failed')
+      }
+
+      const data = await response.json()
+      
+      localStorage.setItem(`testSubmitted:${studentEmail}`, 'true')
+      setIsSubmitted(true)
+      setResult(data)
+      setSubmitStatus({ type: 'success', message: `Test submitted successfully. Your Score: ${data.score}/${data.totalMarks}` })
+    } catch (err) {
+       setSubmitStatus({ type: 'error', message: err.message })
+    }
   }
 
   return (
@@ -173,6 +199,8 @@ function StudentQuestions() {
                         type="radio"
                         name={`question-${question._id || question.id}`}
                         value={index}
+                        checked={answers[question._id] === index}
+                        onChange={() => setAnswers(prev => ({ ...prev, [question._id]: index }))}
                         className="h-4 w-4"
                         disabled={isSubmitted}
                       />

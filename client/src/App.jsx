@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import StudentLogin from './pages/StudentLogin'
 import StudentQuestions from './pages/StudentQuestions'
 import AdminQuestions from './pages/AdminQuestions'
+import AdminTestReset from './pages/AdminTestReset'
+import AdminStudentScore from './pages/AdminStudentScore'
 
 function App() {
 	const [isStudentVerified, setIsStudentVerified] = useState(
@@ -33,7 +35,9 @@ function App() {
 								isStudentVerified ? <StudentQuestions /> : <Navigate to="/login" replace />
 							}
 						/>
-						<Route path="/admin" element={<AdminQuestions />} />
+            <Route path="/admin" element={<AdminQuestions />} />
+            <Route path="/admin/reset" element={<AdminTestReset />} />
+            <Route path="/admin/score" element={<AdminStudentScore />} />
 						<Route path="/login" element={<StudentLogin />} />
 						<Route path="*" element={<Navigate to="/login" replace />} />
 					</Routes>
