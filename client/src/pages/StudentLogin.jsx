@@ -28,9 +28,10 @@ function StudentLogin() {
       }
       localStorage.setItem('studentVerified', 'true')
       localStorage.setItem('studentEmail', email)
+      localStorage.removeItem('systemCheckPassed')
       window.dispatchEvent(new Event('student-verified'))
       setStatus({ type: 'success', message: 'Login successful.' })
-      navigate('/student', { replace: true })
+      navigate('/system-check', { replace: true })
     } else {
       setStatus({ type: 'error', message: 'Bro check your email or password.' })
     }

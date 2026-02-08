@@ -6,6 +6,8 @@ import AdminQuestions from './pages/AdminQuestions'
 import AdminTestReset from './pages/AdminTestReset'
 import AdminStudentScore from './pages/AdminStudentScore'
 
+import SystemCheck from './pages/SystemCheck'
+
 function App() {
 	const [isStudentVerified, setIsStudentVerified] = useState(
 		() => localStorage.getItem('studentVerified') === 'true'
@@ -33,6 +35,12 @@ function App() {
 							path="/student"
 							element={
 								isStudentVerified ? <StudentQuestions /> : <Navigate to="/login" replace />
+							}
+						/>
+                        <Route
+							path="/system-check"
+							element={
+								isStudentVerified ? <SystemCheck /> : <Navigate to="/login" replace />
 							}
 						/>
             <Route path="/admin" element={<AdminQuestions />} />

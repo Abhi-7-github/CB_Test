@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { API_ENDPOINTS } from '../api'
 
 import { useNavigate } from 'react-router-dom'
@@ -11,12 +11,20 @@ function StudentQuestions() {
   const [error, setError] = useState('')
   const [fileInputs, setFileInputs] = useState({})
   const [uploadStatus, setUploadStatus] = useState({})
-  const [studentEmail, setStudentEmail] = useState('')
+  const [studentEmail, setStudentEmail] = useState(() => localStorage.getItem('studentEmail') || '')
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' })
   const [answers, setAnswers] = useState({})
   const [markedForReview, setMarkedForReview] = useState({})
   const [result, setResult] = useState(null)
+  const wasFullscreenRef = useRef(false)
+  const autoSubmitTriggeredRef = useRef(false)
+  const warnedRef = useRef(false)
+  const violationTimerRef = useRef(null)
+  const cameraPreviewRef = useRef(null)
+  const screenPreviewRef = useRef(null)
+  const [hasCameraStream, setHasCameraStream] = useState(false)
+  const [hasScreenStream, setHasScreenStream] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -52,8 +60,225 @@ function StudentQuestions() {
   useEffect(() => {
     const email = localStorage.getItem('studentEmail') || ''
     setStudentEmail(email)
+    
+    // Check if system check passed
+    const systemCheckPassed = localStorage.getItem('systemCheckPassed') === 'true'
+    if (!systemCheckPassed) {
+        navigate('/system-check', { replace: true })
+        return
+    }
+
     if (email) {
       setIsSubmitted(localStorage.getItem(`testSubmitted:${email}`) === 'true')
+    }
+
+  }, [])
+
+  // Refs for auto-submission to access latest state without re-binding listeners
+  const answersRef = useRef(answers)
+  const fileInputsRef = useRef(fileInputs)
+  const isSubmittedRef = useRef(isSubmitted)
+  const studentEmailRef = useRef(studentEmail)
+
+  useEffect(() => {
+      answersRef.current = answers
+      fileInputsRef.current = fileInputs
+      isSubmittedRef.current = isSubmitted
+      studentEmailRef.current = studentEmail
+  }, [answers, fileInputs, isSubmitted, studentEmail])
+
+  const getFullscreenElement = () =>
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement
+
+  const isDevToolsOpen = () => {
+    const widthGap = Math.abs(window.outerWidth - window.innerWidth)
+    const heightGap = Math.abs(window.outerHeight - window.innerHeight)
+    return widthGap > 160 || heightGap > 160
+  }
+
+  const buildVideoStream = (stream) => {
+    if (!stream || !stream.getVideoTracks) {
+      return null
+    }
+    const track = stream.getVideoTracks()[0]
+    if (!track) {
+      return null
+    }
+    return new MediaStream([track])
+  }
+
+  const triggerAutoSubmit = (reason) => {
+    if (autoSubmitTriggeredRef.current) {
+      return
+    }
+    autoSubmitTriggeredRef.current = true
+    handleSubmitTest(true, { useRefs: true, reason })
+  }
+
+  const handleViolation = (reason, stillViolated) => {
+    if (autoSubmitTriggeredRef.current) {
+      return
+    }
+
+    if (!warnedRef.current) {
+      warnedRef.current = true
+      alert(`Warning: ${reason} This is your only warning. The test will be auto-submitted if it happens again.`)
+
+      if (violationTimerRef.current) {
+        clearTimeout(violationTimerRef.current)
+      }
+
+      if (typeof stillViolated === 'function') {
+        violationTimerRef.current = setTimeout(() => {
+          if (stillViolated()) {
+            triggerAutoSubmit(reason)
+          }
+        }, 1500)
+      }
+
+      return
+    }
+
+    triggerAutoSubmit(reason)
+  }
+
+  useEffect(() => {
+    wasFullscreenRef.current = Boolean(getFullscreenElement())
+
+    const handleFullscreenChange = () => {
+      const isFullscreen = Boolean(getFullscreenElement())
+
+      if (wasFullscreenRef.current && !isFullscreen && !isSubmittedRef.current) {
+        // Auto-submit if fullscreen is exited after it was active
+        handleViolation('Fullscreen mode exited.', () => !getFullscreenElement())
+      }
+
+      wasFullscreenRef.current = isFullscreen
+    }
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange)
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange)
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
+    }
+  }, []) // Empty dependency array, listener attached once
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && !isSubmittedRef.current) {
+        handleViolation('You switched tabs or minimized the window.', () => document.visibilityState === 'hidden')
+      }
+    }
+
+    const handleWindowBlur = () => {
+      if (!isSubmittedRef.current) {
+        handleViolation('You left the exam window.', () => document.visibilityState === 'hidden')
+      }
+    }
+
+    const handleBeforeUnload = () => {
+      if (!isSubmittedRef.current) {
+        handleViolation('You attempted to leave the exam page.')
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('blur', handleWindowBlur)
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('blur', handleWindowBlur)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      if (violationTimerRef.current) {
+        clearTimeout(violationTimerRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    const storedStreams = window.__proctoringStreams || {}
+    const cleanups = []
+
+    const attachGuards = (stream, reason) => {
+      if (!stream || !stream.getVideoTracks) {
+        return
+      }
+      const track = stream.getVideoTracks()[0]
+      if (!track) {
+        return
+      }
+
+      if (track.readyState !== 'live' || track.muted) {
+        triggerAutoSubmit(reason)
+        return
+      }
+
+      const handleEnded = () => triggerAutoSubmit(reason)
+      const handleMuted = () => triggerAutoSubmit(reason)
+
+      track.addEventListener('ended', handleEnded)
+      track.addEventListener('mute', handleMuted)
+
+      cleanups.push(() => {
+        track.removeEventListener('ended', handleEnded)
+        track.removeEventListener('mute', handleMuted)
+      })
+    }
+
+    if (storedStreams.cameraStream) {
+      setHasCameraStream(true)
+      attachGuards(storedStreams.cameraStream, 'Camera or microphone turned off.')
+    } else {
+      setHasCameraStream(false)
+      triggerAutoSubmit('Camera or microphone is not active.')
+    }
+
+    if (storedStreams.screenStream) {
+      setHasScreenStream(true)
+      attachGuards(storedStreams.screenStream, 'Screen sharing stopped.')
+    } else {
+      setHasScreenStream(false)
+      triggerAutoSubmit('Screen sharing is not active.')
+    }
+
+    return () => {
+      cleanups.forEach((cleanup) => cleanup())
+    }
+  }, [])
+
+  useEffect(() => {
+    const storedStreams = window.__proctoringStreams || {}
+
+    if (cameraPreviewRef.current && storedStreams.cameraStream) {
+      cameraPreviewRef.current.srcObject = buildVideoStream(storedStreams.cameraStream)
+      cameraPreviewRef.current.play().catch(() => {})
+    }
+
+    if (screenPreviewRef.current && storedStreams.screenStream) {
+      screenPreviewRef.current.srcObject = buildVideoStream(storedStreams.screenStream)
+      screenPreviewRef.current.play().catch(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      if (isDevToolsOpen() && !isSubmittedRef.current) {
+        handleViolation('Developer tools detected.', isDevToolsOpen)
+      }
+    }, 1000)
+
+    return () => {
+      clearInterval(intervalId)
     }
   }, [])
 
@@ -120,30 +345,48 @@ function StudentQuestions() {
     }
   }
 
-  const handleSubmitTest = async () => {
-    if (!studentEmail) {
+  async function handleSubmitTest(forced = false, options = {}) {
+    const { useRefs = false, reason = '' } = options
+    const currentStudentEmail = useRefs ? studentEmailRef.current : studentEmail
+    const currentAnswers = useRefs ? answersRef.current : answers
+    const currentFileInputs = useRefs ? fileInputsRef.current : fileInputs
+    const currentIsSubmitted = useRefs ? isSubmittedRef.current : isSubmitted
+
+    if (!currentStudentEmail) {
       setSubmitStatus({ type: 'error', message: 'Login required before submitting.' })
       return
     }
 
-    if (isSubmitted) {
-      setSubmitStatus({ type: 'error', message: 'Test already submitted.' })
+    if (currentIsSubmitted) {
+      // If already submitted, just return
       return
     }
 
-    // Calculate answered questions count
-    const answeredIds = new Set([
-        ...Object.keys(answers),
-        ...Object.keys(fileInputs).filter(id => fileInputs[id])
-    ])
-    const count = answeredIds.size
-    const total = questions.length
+    if (!forced) {
+        // Calculate answered questions count
+        const answeredIds = new Set([
+            ...Object.keys(currentAnswers),
+            ...Object.keys(currentFileInputs).filter(id => currentFileInputs[id])
+        ])
+        const count = answeredIds.size
+        const total = questions.length
 
-    if (!window.confirm(`You have answered ${count} out of ${total} questions. Do you want to submit?`)) {
-        return
+        if (!window.confirm(`You have answered ${count} out of ${total} questions. Do you want to submit?`)) {
+            return
+        }
+    } else {
+        const alertMessage = reason || 'Fullscreen mode exited. Auto-submitting test.'
+        alert(alertMessage)
     }
 
-    setSubmitStatus({ type: 'loading', message: 'Submitting...' })
+    setSubmitStatus({
+      type: 'loading',
+      message: forced
+        ? reason
+          ? `Auto-submitting: ${reason}`
+          : 'Auto-submitting due to fullscreen exit...'
+        : 'Submitting...',
+    })
     
     try {
       const response = await fetch(API_ENDPOINTS.submitTest, {
@@ -152,8 +395,8 @@ function StudentQuestions() {
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            studentEmail,
-            responses: answers
+            studentEmail: currentStudentEmail,
+            responses: currentAnswers
         })
       })
 
@@ -163,7 +406,7 @@ function StudentQuestions() {
 
       const data = await response.json()
       
-      localStorage.setItem(`testSubmitted:${studentEmail}`, 'true')
+      localStorage.setItem(`testSubmitted:${currentStudentEmail}`, 'true')
       setIsSubmitted(true)
       navigate('/')
     } catch (err) {
@@ -238,6 +481,37 @@ function StudentQuestions() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+        <div className="absolute bottom-4 right-4 z-20 w-56 space-y-3">
+          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow">
+            <div className="border-b border-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
+              Camera
+            </div>
+            <div className="aspect-video bg-slate-900">
+              {hasCameraStream ? (
+                <video ref={cameraPreviewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                  Camera off
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow">
+            <div className="border-b border-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
+              Screen
+            </div>
+            <div className="aspect-video bg-slate-900">
+              {hasScreenStream ? (
+                <video ref={screenPreviewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full items-center justify-center text-xs text-slate-400">
+                  Screen share off
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
         {/* TOP HEADER */}
         <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm z-10">
           <div className="flex items-center gap-4">
