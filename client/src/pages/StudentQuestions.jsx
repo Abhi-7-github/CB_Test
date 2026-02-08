@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react'
 import { API_ENDPOINTS } from '../api'
 
+import { useNavigate } from 'react-router-dom'
+
 function StudentQuestions() {
+  const navigate = useNavigate()
   const [questions, setQuestions] = useState([])
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [fileInputs, setFileInputs] = useState({})
@@ -11,6 +15,7 @@ function StudentQuestions() {
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' })
   const [answers, setAnswers] = useState({})
+  const [markedForReview, setMarkedForReview] = useState({})
   const [result, setResult] = useState(null)
 
   useEffect(() => {
@@ -126,6 +131,18 @@ function StudentQuestions() {
       return
     }
 
+    // Calculate answered questions count
+    const answeredIds = new Set([
+        ...Object.keys(answers),
+        ...Object.keys(fileInputs).filter(id => fileInputs[id])
+    ])
+    const count = answeredIds.size
+    const total = questions.length
+
+    if (!window.confirm(`You have answered ${count} out of ${total} questions. Do you want to submit?`)) {
+        return
+    }
+
     setSubmitStatus({ type: 'loading', message: 'Submitting...' })
     
     try {
@@ -148,135 +165,304 @@ function StudentQuestions() {
       
       localStorage.setItem(`testSubmitted:${studentEmail}`, 'true')
       setIsSubmitted(true)
-      setResult(data)
-      setSubmitStatus({ type: 'success', message: `Test submitted successfully. Your Score: ${data.score}/${data.totalMarks}` })
+      navigate('/')
     } catch (err) {
        setSubmitStatus({ type: 'error', message: err.message })
     }
   }
 
   return (
-    <div className="grid gap-4">
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Questions</h1>
-        <p className="mt-1 text-sm text-slate-500">Review the available questions.</p>
-      </div>
-
-      {questions.length === 0 ? (
-        <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-500">
-          No questions available yet.
+    <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
+      {/* LEFT SIDEBAR - QUESTION PANEL */}
+      <aside className="flex w-64 flex-col border-r border-slate-200 bg-white shadow-sm hidden md:flex z-10">
+        <div className="p-4 border-b border-slate-100">
+           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
+             Question Panel
+           </h2>
         </div>
-      ) : (
-        <div className="grid gap-3">
-          {isSubmitted && (
-            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-              You have already submitted this test. Contact admin to reset your attempt.
+        
+        <div className="flex-1 overflow-y-auto p-4">
+          <div className="grid grid-cols-4 gap-3">
+            {questions.map((q, index) => {
+              const qId = q._id || q.id || index;
+              const isCurrent = index === currentQuestionIndex;
+              const isAnswered = answers[qId] !== undefined || fileInputs[qId];
+              const isReview = markedForReview[qId];
+              
+              let btnClass = "bg-white border text-slate-600 hover:bg-slate-50"; // Default
+              
+              if (isCurrent) {
+                btnClass = "border-blue-500 text-blue-600 ring-1 ring-blue-500 bg-blue-50 font-bold";
+              } else if (isReview && isAnswered) {
+                btnClass = "border-purple-500 text-purple-600 bg-purple-50";
+              } else if (isReview) {
+                btnClass = "border-orange-500 text-orange-600 bg-orange-50";
+              } else if (isAnswered) {
+                btnClass = "border-emerald-500 text-emerald-600 bg-emerald-50";
+              } else {
+                 btnClass = "border-slate-200";
+              }
+
+              return (
+                <button
+                  key={qId}
+                  onClick={() => setCurrentQuestionIndex(index)}
+                  className={`
+                    flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-all shadow-sm
+                    ${btnClass}
+                  `}
+                >
+                  {index + 1}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Legend */}
+        <div className="border-t border-slate-100 p-4 text-xs font-medium text-slate-600 space-y-2">
+            <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full bg-blue-500"></span> Current
             </div>
-          )}
-          {questions.map((question) => (
-            <article
-              key={question._id || question.id}
-              className="rounded-md border border-slate-200 bg-white p-4"
-            >
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <span className="rounded-full border border-slate-200 px-2 py-0.5">
-                  {question.type?.toUpperCase() || 'MCQ'}
-                </span>
-                <span>Marks: {question.marks ?? 1}</span>
-                {question.id && <span>ID: {question.id}</span>}
-              </div>
-              <h2 className="mt-2 text-sm font-semibold text-slate-900">
-                {question.text}
-              </h2>
-              {Array.isArray(question.options) && question.options.length > 0 && (
-                <div className="mt-3 grid gap-2 text-sm text-slate-700">
-                  {question.options.map((option, index) => (
-                    <label
-                      key={`${question._id || question.id}-opt-${index}`}
-                      className="flex items-center gap-2"
-                    >
-                      <input
-                        type="radio"
-                        name={`question-${question._id || question.id}`}
-                        value={index}
-                        checked={answers[question._id] === index}
-                        onChange={() => setAnswers(prev => ({ ...prev, [question._id]: index }))}
-                        className="h-4 w-4"
-                        disabled={isSubmitted}
-                      />
-                      <span>{option}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
+            <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full bg-emerald-500"></span> Answered
+            </div>
+            <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full bg-orange-500"></span> Review
+            </div>
+             <div className="flex items-center gap-2">
+                <span className="h-3 w-3 rounded-full bg-purple-500"></span> Both
+            </div>
+        </div>
+      </aside>
 
-              {question.type === 'file' && (
-                <div className="mt-4 grid gap-3 rounded-md border border-slate-200 bg-slate-50 p-3">
-                  <div className="text-xs text-slate-600">
-                    Upload a file for this question.
-                    {question.fileUpload?.maxSizeMb && (
-                      <span> Max size: {question.fileUpload.maxSizeMb} MB.</span>
-                    )}
-                  </div>
-                  <input
-                    type="file"
-                    accept={question.fileUpload?.accept?.join(',') || undefined}
-                    onChange={(event) =>
-                      handleFileChange(question._id, event.target.files?.[0] || null)
-                    }
-                    className="text-sm"
-                    disabled={isSubmitted}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => handleUpload(question)}
-                    className="w-fit rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"
-                    disabled={isSubmitted}
-                  >
-                    Upload
-                  </button>
-                  {uploadStatus[question._id]?.message && (
-                    <div
-                      className={`text-xs font-semibold ${
-                        uploadStatus[question._id].type === 'success'
-                          ? 'text-emerald-700'
-                          : uploadStatus[question._id].type === 'loading'
-                          ? 'text-slate-600'
-                          : 'text-rose-700'
-                      }`}
-                    >
-                      {uploadStatus[question._id].message}
-                    </div>
-                  )}
-                </div>
-              )}
-            </article>
-          ))}
+      {/* MAIN CONTENT */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
+        {/* TOP HEADER */}
+        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm z-10">
+          <div className="flex items-center gap-4">
+            <h1 className="text-lg font-bold text-slate-900">Event Assessment</h1>
+            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
+              Question {currentQuestionIndex + 1} / {questions.length}
+            </span>
+          </div>
+          
+          <div className="flex items-center gap-4">
+             {/* Placeholders for visual match */}
+             <div className="hidden sm:flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
+                <span>♥</span> 5 Lives
+             </div>
+             <div className="hidden sm:flex items-center gap-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700">
+                <span>⏱</span> 59:48
+             </div>
 
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={handleSubmitTest}
-              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isSubmitted}
-            >
-              Submit Test
+             <button
+                type="button"
+                onClick={handleSubmitTest}
+                className="rounded-md bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95"
+                disabled={isSubmitted}
+              >
+                Finish Assessment
             </button>
           </div>
+        </header>
 
-          {submitStatus.message && (
-            <div
-              className={`text-sm font-semibold ${
-                submitStatus.type === 'success'
-                  ? 'text-emerald-700'
-                  : 'text-rose-700'
-              }`}
-            >
-              {submitStatus.message}
+        {/* QUESTION AREA */}
+        <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
+           {isSubmitted && (
+            <div className="w-full mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
+               <h3 className="font-bold">Test Submitted!</h3>
+               <p className="text-sm mt-1">Your response has been recorded.</p>
+               {submitStatus.message && <div className="mt-2 text-sm font-semibold">{submitStatus.message}</div>}
             </div>
           )}
+
+           {/* Alerts */}
+           {submitStatus.message && !isSubmitted && submitStatus.type === 'error' && (
+            <div className="w-full mb-6 p-4 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
+                {submitStatus.message}
+            </div>
+           )}
+
+          {questions.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center text-slate-400">
+               <svg className="h-12 w-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+               </svg>
+               <p>No questions loaded.</p>
+            </div>
+          ) : (
+             <div className="w-full h-full flex flex-col">
+               {/* Controls Bar */}
+               <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                  <label className="flex cursor-pointer items-center gap-2 select-none">
+                     <div className="relative flex items-center">
+                        <input 
+                          type="checkbox" 
+                          className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 shadow-sm transition-all checked:border-indigo-500 checked:bg-indigo-500 hover:border-indigo-400"
+                          checked={(() => {
+                            const q = questions[currentQuestionIndex];
+                            return q && markedForReview[(q._id || q.id || currentQuestionIndex)];
+                          })() || false}
+                          onChange={() => {
+                             const q = questions[currentQuestionIndex];
+                             if(!q) return;
+                             const qId = q._id || q.id || currentQuestionIndex;
+                             setMarkedForReview(prev => ({
+                               ...prev,
+                               [qId]: !prev[qId]
+                             }))
+                          }}
+                        />
+                         <svg className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                         </svg>
+                     </div>
+                     <span className="text-sm font-medium text-slate-600">Mark for review</span>
+                  </label>
+
+                  <div className="flex items-center gap-2">
+                     <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-sm font-bold text-emerald-600 shadow-sm">+1</span>
+                     <span className="rounded border border-rose-200 bg-rose-50 px-2.5 py-1 text-sm font-bold text-rose-600 shadow-sm">0</span>
+                  </div>
+               </div>
+
+               {/* Question Card */}
+               {(() => {
+                 const question = questions[currentQuestionIndex];
+                 if (!question) return null;
+                 const qId = question._id || question.id;
+                 const currentAnswer = answers[qId];
+
+                 return (
+                   <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all">
+                     <div className="p-6 md:p-8">
+                        <div className="mb-6">
+                           <p className="text-sm font-medium text-slate-500 mb-2">Question {currentQuestionIndex + 1} of {questions.length}</p>
+                           <h2 className="text-xl md:text-2xl font-semibold text-slate-900 leading-snug">
+                              {question.text}
+                           </h2>
+                        </div>
+
+                        {/* Options */}
+                        {Array.isArray(question.options) && question.options.length > 0 && (
+                          <div className="space-y-3">
+                            {question.options.map((option, index) => {
+                               const isSelected = currentAnswer === index;
+                               return (
+                                  <div 
+                                    key={`${qId}-opt-${index}`}
+                                    onClick={() => {
+                                        if(!isSubmitted) setAnswers(prev => ({ ...prev, [qId]: index }))
+                                    }}
+                                    className={`
+                                       group flex cursor-pointer items-center gap-4 rounded-lg border-2 p-4 transition-all
+                                       ${isSelected 
+                                          ? 'border-blue-500 bg-blue-50/50' 
+                                          : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50'}
+                                    `}
+                                  >
+                                     <div className={`
+                                        flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all
+                                        ${isSelected ? 'border-blue-500' : 'border-slate-300 group-hover:border-slate-400'}
+                                     `}>
+                                        {isSelected && <div className="h-3 w-3 rounded-full bg-blue-500" />}
+                                     </div>
+                                     <span className={`text-base font-medium ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>
+                                        {option}
+                                     </span>
+                                  </div>
+                               )
+                            })}
+                          </div>
+                        )}
+
+                        {/* File Upload Type - Styling match */}
+                        {question.type === 'file' && (
+                           <div className="rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                              <p className="text-slate-600 mb-4">Upload your response for this question.</p>
+                              <div className="flex flex-col items-center gap-4">
+                                  <input
+                                      type="file"
+                                      accept={question.fileUpload?.accept?.join(',') || undefined}
+                                      onChange={(event) =>
+                                         handleFileChange(qId, event.target.files?.[0] || null)
+                                      }
+                                      className="file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 text-sm text-slate-500"
+                                      disabled={isSubmitted}
+                                   />
+                                   <button
+                                      type="button"
+                                      onClick={() => handleUpload(question)}
+                                      className="rounded-full bg-slate-900 px-6 py-2 text-sm font-bold text-white shadow-md transition-transform active:scale-95"
+                                      disabled={isSubmitted}
+                                  >
+                                      Upload Answer
+                                  </button>
+                                  {uploadStatus[qId] && (
+                                     <div className={`mt-2 text-sm font-bold ${
+                                         uploadStatus[qId].type === 'success' ? 'text-emerald-600' : 
+                                         uploadStatus[qId].type === 'loading' ? 'text-blue-600' : 'text-rose-600'
+                                     }`}>
+                                         {uploadStatus[qId].message}
+                                     </div>
+                                  )}
+                              </div>
+                           </div>
+                        )}
+                        
+                        {/* Clear Response */}
+                        <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
+                            <button
+                               onClick={() => {
+                                  if(isSubmitted) return;
+                                  setAnswers(prev => {
+                                      const next = { ...prev };
+                                      delete next[qId];
+                                      return next;
+                                  });
+                                  setFileInputs(prev => {
+                                      const next = { ...prev };
+                                      delete next[qId];
+                                      return next;
+                                  });
+                               }}
+                               disabled={isSubmitted}
+                               className="group flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-rose-600 transition-colors disabled:opacity-50"
+                            >
+                                <span className="flex h-4 w-4 items-center justify-center rounded border border-slate-300 group-hover:border-rose-400 bg-white shadow-sm">
+                                  {/* Dummy checkbox look */}
+                                </span>
+                                Clear Response
+                            </button>
+                            
+                            {/* Nav Buttons integrated here for better flow */}
+                            <div className="flex items-center gap-4">
+                                <button
+                                    onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                                    disabled={currentQuestionIndex === 0}
+                                    className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-50"
+                                >
+                                    Previous
+                                </button>
+                                <button
+                                    onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                                    disabled={currentQuestionIndex === questions.length - 1}
+                                    className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white shadow hover:bg-indigo-700 disabled:opacity-50"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        </div>
+
+                     </div>
+                   </article>
+                 );
+               })()}
+             </div>
+          )}
         </div>
-      )}
+      </main>
     </div>
   )
 }

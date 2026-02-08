@@ -95,13 +95,14 @@ router.post('/submit-test', async (req, res) => {
         }
     }
 
-    const newScore = new Score({
-      studentEmail,
-      score: totalScore,
-      totalMarks: totalPossibleMarks
-    });
-
-    await newScore.save();
+    await Score.findOneAndUpdate(
+      { studentEmail },
+      {
+        score: totalScore,
+        totalMarks: totalPossibleMarks
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     res.status(200).json({ message: 'Test submitted', score: totalScore, totalMarks: totalPossibleMarks });
   } catch (err) {

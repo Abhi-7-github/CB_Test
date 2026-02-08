@@ -22,6 +22,10 @@ function StudentLogin() {
     )
 
     if (match) {
+      if (localStorage.getItem(`testSubmitted:${email}`) === 'true') {
+        setStatus({ type: 'error', message: 'You have already submitted the test.' })
+        return
+      }
       localStorage.setItem('studentVerified', 'true')
       localStorage.setItem('studentEmail', email)
       window.dispatchEvent(new Event('student-verified'))
