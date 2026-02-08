@@ -2,12 +2,22 @@ const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const questionRoutes = require('./routes/questions');
+const submissionRoutes = require('./routes/submissions');
 require('dotenv').config();
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use('/api/questions', questionRoutes);
+app.use('/api', submissionRoutes);
+
+app.post('/api/admin/verify', (req, res) => {
+    const adminKey = req.header('x-admin-key');
+    if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+        return res.status(401).json({ message: 'Invalid admin key' });
+    }
+    return res.json({ message: 'Admin verified' });
+});
 
 const PORT = process.env.PORT || 1000;
 mongoose.connect(process.env.MONGO_URI)

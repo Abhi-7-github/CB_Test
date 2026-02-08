@@ -1,8 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import studentData from '../data/studentdata.json'
 import TextField from '../components/TextField'
 
 function StudentLogin() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [status, setStatus] = useState({ type: 'idle', message: '' })
@@ -11,7 +13,7 @@ function StudentLogin() {
     event.preventDefault()
 
     if (!email.endsWith('@klu.ac.in')) {
-      setStatus({ type: 'error', message: 'Use your @klu.ac.in email.' })
+      setStatus({ type: 'error', message: 'Bro Use your @klu.ac.in email.' })
       return
     }
 
@@ -20,9 +22,12 @@ function StudentLogin() {
     )
 
     if (match) {
+      localStorage.setItem('studentVerified', 'true')
+      window.dispatchEvent(new Event('student-verified'))
       setStatus({ type: 'success', message: 'Login successful.' })
+      navigate('/student', { replace: true })
     } else {
-      setStatus({ type: 'error', message: 'Invalid email or password.' })
+      setStatus({ type: 'error', message: 'Bro check your email or password.' })
     }
   }
 

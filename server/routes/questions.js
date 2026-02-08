@@ -4,8 +4,8 @@ const Question = require('../models/Question');
 const router = express.Router();
 
 function requireAdmin(req, res, next) {
-  const role = req.header('x-role');
-  if (role !== 'admin') {
+  const adminKey = req.header('x-admin-key');
+  if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
     return res.status(403).json({ message: 'Admin access required' });
   }
   return next();

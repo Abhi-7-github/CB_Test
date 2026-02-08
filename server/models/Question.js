@@ -7,7 +7,7 @@ const QuestionSchema = new Schema(
     id: { type: String, unique: true },
     type: {
       type: String,
-      enum: ['mcq', 'coding'],
+      enum: ['mcq', 'coding', 'file'],
       default: 'mcq',
     },
     text: {
@@ -33,6 +33,21 @@ const QuestionSchema = new Schema(
     example: {
       input: String,
       output: String,
+    },
+    fileUpload: {
+      required: {
+        type: Boolean,
+        default: false,
+      },
+      accept: {
+        type: [String],
+        default: [],
+      },
+      maxSizeMb: {
+        type: Number,
+        default: 5,
+        min: 1,
+      },
     },
   },
   { timestamps: true }
