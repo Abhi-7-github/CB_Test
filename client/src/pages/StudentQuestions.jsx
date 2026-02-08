@@ -7,6 +7,9 @@ function StudentQuestions() {
   const [error, setError] = useState('')
   const [fileInputs, setFileInputs] = useState({})
   const [uploadStatus, setUploadStatus] = useState({})
+  const [studentEmail, setStudentEmail] = useState('')
+  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' })
 
   useEffect(() => {
     let ignore = false
@@ -36,6 +39,14 @@ function StudentQuestions() {
 
     return () => {
       ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    const email = localStorage.getItem('studentEmail') || ''
+    setStudentEmail(email)
+    if (email) {
+      setIsSubmitted(localStorage.getItem(`testSubmitted:${email}`) === 'true')
     }
   }, [])
 
@@ -102,6 +113,22 @@ function StudentQuestions() {
     }
   }
 
+  const handleSubmitTest = () => {
+    if (!studentEmail) {
+      setSubmitStatus({ type: 'error', message: 'Login required before submitting.' })
+      return
+    }
+
+    if (isSubmitted) {
+      setSubmitStatus({ type: 'error', message: 'Test already submitted.' })
+      return
+    }
+
+    localStorage.setItem(`testSubmitted:${studentEmail}`, 'true')
+    setIsSubmitted(true)
+    setSubmitStatus({ type: 'success', message: 'Test submitted successfully.' })
+  }
+
   return (
     <div className="grid gap-4">
       <div>
@@ -115,6 +142,11 @@ function StudentQuestions() {
         </div>
       ) : (
         <div className="grid gap-3">
+          {isSubmitted && (
+            <div className="rounded-md border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+              You have already submitted this test. Contact admin to reset your attempt.
+            </div>
+          )}
           {questions.map((question) => (
             <article
               key={question._id || question.id}
@@ -131,11 +163,23 @@ function StudentQuestions() {
                 {question.text}
               </h2>
               {Array.isArray(question.options) && question.options.length > 0 && (
-                <ol className="mt-2 list-decimal pl-5 text-sm text-slate-700">
+                <div className="mt-3 grid gap-2 text-sm text-slate-700">
                   {question.options.map((option, index) => (
-                    <li key={`${question._id || question.id}-opt-${index}`}>{option}</li>
+                    <label
+                      key={`${question._id || question.id}-opt-${index}`}
+                      className="flex items-center gap-2"
+                    >
+                      <input
+                        type="radio"
+                        name={`question-${question._id || question.id}`}
+                        value={index}
+                        className="h-4 w-4"
+                        disabled={isSubmitted}
+                      />
+                      <span>{option}</span>
+                    </label>
                   ))}
-                </ol>
+                </div>
               )}
 
               {question.type === 'file' && (
@@ -153,11 +197,13 @@ function StudentQuestions() {
                       handleFileChange(question._id, event.target.files?.[0] || null)
                     }
                     className="text-sm"
+                    disabled={isSubmitted}
                   />
                   <button
                     type="button"
                     onClick={() => handleUpload(question)}
                     className="w-fit rounded-md bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"
+                    disabled={isSubmitted}
                   >
                     Upload
                   </button>
@@ -178,6 +224,29 @@ function StudentQuestions() {
               )}
             </article>
           ))}
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={handleSubmitTest}
+              className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isSubmitted}
+            >
+              Submit Test
+            </button>
+          </div>
+
+          {submitStatus.message && (
+            <div
+              className={`text-sm font-semibold ${
+                submitStatus.type === 'success'
+                  ? 'text-emerald-700'
+                  : 'text-rose-700'
+              }`}
+            >
+              {submitStatus.message}
+            </div>
+          )}
         </div>
       )}
     </div>

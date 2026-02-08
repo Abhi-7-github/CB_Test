@@ -23,6 +23,7 @@ function StudentLogin() {
 
     if (match) {
       localStorage.setItem('studentVerified', 'true')
+      localStorage.setItem('studentEmail', email)
       window.dispatchEvent(new Event('student-verified'))
       setStatus({ type: 'success', message: 'Login successful.' })
       navigate('/student', { replace: true })

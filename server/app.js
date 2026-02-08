@@ -1,9 +1,9 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 const questionRoutes = require('./routes/questions');
 const submissionRoutes = require('./routes/submissions');
-require('dotenv').config();
 const app = express();
 
 app.use(cors());

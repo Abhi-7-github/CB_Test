@@ -7,6 +7,8 @@ function AdminQuestions() {
   const [adminKey, setAdminKey] = useState('')
   const [isVerified, setIsVerified] = useState(false)
   const [verifyStatus, setVerifyStatus] = useState({ type: 'idle', message: '' })
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetStatus, setResetStatus] = useState('')
   const [formData, setFormData] = useState({
     id: '',
     type: 'mcq',
@@ -126,6 +128,16 @@ function AdminQuestions() {
     } finally {
       setVerifying(false)
     }
+  }
+
+  const handleResetAttempt = () => {
+    if (!resetEmail.trim()) {
+      setResetStatus('Enter a student email to reset.')
+      return
+    }
+
+    localStorage.removeItem(`testSubmitted:${resetEmail.trim().toLowerCase()}`)
+    setResetStatus('Attempt reset for this browser.')
   }
 
   return (
@@ -267,6 +279,34 @@ function AdminQuestions() {
       ) : (
         <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-500">
           Verify the admin key to unlock question creation.
+        </div>
+      )}
+
+      {isVerified && (
+        <div className="rounded-md border border-slate-200 bg-white p-4">
+          <p className="text-sm font-semibold text-slate-900">Reset Student Attempt</p>
+          <p className="mt-1 text-xs text-slate-500">
+            This resets attempts only in this browser.
+          </p>
+          <div className="mt-3 grid gap-2">
+            <TextField
+              id="reset-email"
+              label="Student Email"
+              value={resetEmail}
+              onChange={(event) => setResetEmail(event.target.value)}
+              placeholder="student@klu.ac.in"
+            />
+            <button
+              type="button"
+              onClick={handleResetAttempt}
+              className="w-fit rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
+            >
+              Reset Attempt
+            </button>
+            {resetStatus && (
+              <span className="text-xs font-semibold text-slate-600">{resetStatus}</span>
+            )}
+          </div>
         </div>
       )}
 
