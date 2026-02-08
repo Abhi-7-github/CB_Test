@@ -1,0 +1,45 @@
+.login {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at top, #f6f2ff, #fef6e7);
+  padding: 2rem;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.login__card {
+  width: min(420px, 100%);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 2.5rem;
+  box-shadow: 0 20px 60px rgba(26, 26, 26, 0.12);
+  text-align: left;
+}
+
+.login__title {
+  margin: 0 0 0.5rem;
+  /* Tailwind-only styling; keep file empty to avoid custom CSS. */
+}
+
+.login__form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(30, 27, 75, 0.2);
+}
+
+.login__status {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.login__status--success {
+  background: #ecfdf3;
+  color: #0f766e;
+}
+
+.login__status--error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
