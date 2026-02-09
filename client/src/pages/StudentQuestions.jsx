@@ -23,8 +23,8 @@ function StudentQuestions() {
   const violationTimerRef = useRef(null)
   const cameraPreviewRef = useRef(null)
   const screenPreviewRef = useRef(null)
-  const [hasCameraStream, setHasCameraStream] = useState(false)
-  const [hasScreenStream, setHasScreenStream] = useState(false)
+  const [hasCameraStream, setHasCameraStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.cameraStream))
+  const [hasScreenStream, setHasScreenStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.screenStream))
 
   useEffect(() => {
     let ignore = false
@@ -99,176 +99,7 @@ function StudentQuestions() {
     return widthGap > 160 || heightGap > 160
   }
 
-  const buildVideoStream = (stream) => {
-    if (!stream || !stream.getVideoTracks) {
-      return null
-    }
-    const track = stream.getVideoTracks()[0]
-    if (!track) {
-      return null
-    }
-    return new MediaStream([track])
-  }
 
-  const triggerAutoSubmit = (reason) => {
-    if (autoSubmitTriggeredRef.current) {
-      return
-    }
-    autoSubmitTriggeredRef.current = true
-    handleSubmitTest(true, { useRefs: true, reason })
-  }
-
-  const handleViolation = (reason, stillViolated) => {
-    if (autoSubmitTriggeredRef.current) {
-      return
-    }
-
-    if (!warnedRef.current) {
-      warnedRef.current = true
-      alert(`Warning: ${reason} This is your only warning. The test will be auto-submitted if it happens again.`)
-
-      if (violationTimerRef.current) {
-        clearTimeout(violationTimerRef.current)
-      }
-
-      if (typeof stillViolated === 'function') {
-        violationTimerRef.current = setTimeout(() => {
-          if (stillViolated()) {
-            triggerAutoSubmit(reason)
-          }
-        }, 1500)
-      }
-
-      return
-    }
-
-    triggerAutoSubmit(reason)
-  }
-
-  useEffect(() => {
-    wasFullscreenRef.current = Boolean(getFullscreenElement())
-
-    const handleFullscreenChange = () => {
-      const isFullscreen = Boolean(getFullscreenElement())
-
-      if (wasFullscreenRef.current && !isFullscreen && !isSubmittedRef.current) {
-        // Auto-submit if fullscreen is exited after it was active
-        handleViolation('Fullscreen mode exited.', () => !getFullscreenElement())
-      }
-
-      wasFullscreenRef.current = isFullscreen
-    }
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
-    document.addEventListener('mozfullscreenchange', handleFullscreenChange)
-    document.addEventListener('MSFullscreenChange', handleFullscreenChange)
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange)
-      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
-      document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
-      document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
-    }
-  }, []) // Empty dependency array, listener attached once
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === 'hidden' && !isSubmittedRef.current) {
-        handleViolation('You switched tabs or minimized the window.', () => document.visibilityState === 'hidden')
-      }
-    }
-
-    const handleWindowBlur = () => {
-      if (!isSubmittedRef.current) {
-        handleViolation('You left the exam window.', () => document.visibilityState === 'hidden')
-      }
-    }
-
-    const handleBeforeUnload = () => {
-      if (!isSubmittedRef.current) {
-        handleViolation('You attempted to leave the exam page.')
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('blur', handleWindowBlur)
-    window.addEventListener('beforeunload', handleBeforeUnload)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('blur', handleWindowBlur)
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      if (violationTimerRef.current) {
-        clearTimeout(violationTimerRef.current)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
-    const storedStreams = window.__proctoringStreams || {}
-    const cleanups = []
-
-    const attachGuards = (stream, reason) => {
-      if (!stream || !stream.getVideoTracks) {
-        return
-      }
-      const track = stream.getVideoTracks()[0]
-      if (!track) {
-        return
-      }
-
-      if (track.readyState !== 'live' || track.muted) {
-        triggerAutoSubmit(reason)
-        return
-      }
-
-      const handleEnded = () => triggerAutoSubmit(reason)
-      const handleMuted = () => triggerAutoSubmit(reason)
-
-      track.addEventListener('ended', handleEnded)
-      track.addEventListener('mute', handleMuted)
-
-      cleanups.push(() => {
-        track.removeEventListener('ended', handleEnded)
-        track.removeEventListener('mute', handleMuted)
-      })
-    }
-
-    if (storedStreams.cameraStream) {
-      setHasCameraStream(true)
-      attachGuards(storedStreams.cameraStream, 'Camera or microphone turned off.')
-    } else {
-      setHasCameraStream(false)
-      triggerAutoSubmit('Camera or microphone is not active.')
-    }
-
-    if (storedStreams.screenStream) {
-      setHasScreenStream(true)
-      attachGuards(storedStreams.screenStream, 'Screen sharing stopped.')
-    } else {
-      setHasScreenStream(false)
-      triggerAutoSubmit('Screen sharing is not active.')
-    }
-
-    return () => {
-      cleanups.forEach((cleanup) => cleanup())
-    }
-  }, [])
-
-  useEffect(() => {
-    const storedStreams = window.__proctoringStreams || {}
-
-    if (cameraPreviewRef.current && storedStreams.cameraStream) {
-      cameraPreviewRef.current.srcObject = buildVideoStream(storedStreams.cameraStream)
-      cameraPreviewRef.current.play().catch(() => {})
-    }
-
-    if (screenPreviewRef.current && storedStreams.screenStream) {
-      screenPreviewRef.current.srcObject = buildVideoStream(storedStreams.screenStream)
-      screenPreviewRef.current.play().catch(() => {})
-    }
-  }, [])
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -371,7 +202,7 @@ function StudentQuestions() {
         const count = answeredIds.size
         const total = questions.length
 
-        if (!window.confirm(`You have answered ${count} out of ${total} questions. Do you want to submit?`)) {
+        if (!window.confirm(`Do you want to submit the test?\n\nAttempted: ${count}\nTotal: ${total}`)) {
             return
         }
     } else {
@@ -418,6 +249,64 @@ function StudentQuestions() {
     <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
       {/* LEFT SIDEBAR - QUESTION PANEL */}
       <aside className="flex w-64 flex-col border-r border-slate-200 bg-white shadow-sm hidden md:flex z-10">
+        {/* MONITORING PANEL */}
+        <div className="p-4 border-b border-slate-100">
+           <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Monitoring</h2>
+           <div className="grid grid-cols-2 gap-2">
+              {/* Camera */}
+              <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
+                  <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                     <span className="text-[8px] font-bold text-white uppercase tracking-wider shadow-black drop-shadow-md">Camera</span>
+                  </div>
+                  {hasCameraStream ? (
+                     <video 
+                        ref={el => {
+                            if (el && window.__proctoringStreams?.cameraStream) {
+                                el.srcObject = window.__proctoringStreams.cameraStream
+                                el.play().catch(() => {})
+                            }
+                            cameraPreviewRef.current = el
+                        }}
+                        autoPlay 
+                        muted 
+                        playsInline 
+                        className="h-full w-full object-cover opacity-90" 
+                     />
+                  ) : (
+                     <div className="flex h-full items-center justify-center text-[8px] text-slate-400">Off</div>
+                  )}
+                  {hasCameraStream && <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 border border-white animate-pulse shadow-sm" />}
+              </div>
+
+               {/* Screen */}
+              <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
+                   <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
+                     <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                     <span className="text-[8px] font-bold text-white uppercase tracking-wider shadow-black drop-shadow-md">Screen</span>
+                  </div>
+                  {hasScreenStream ? (
+                     <video 
+                        ref={el => {
+                             if (el && window.__proctoringStreams?.screenStream) {
+                                el.srcObject = window.__proctoringStreams.screenStream
+                                el.play().catch(() => {})
+                            }
+                            screenPreviewRef.current = el
+                        }}
+                        autoPlay 
+                        muted 
+                        playsInline 
+                        className="h-full w-full object-cover opacity-90" 
+                     />
+                  ) : (
+                     <div className="flex h-full items-center justify-center text-[8px] text-slate-400">Off</div>
+                  )}
+                  {hasScreenStream && <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-500 border border-white animate-pulse shadow-sm" />}
+              </div>
+           </div>
+        </div>
+
         <div className="p-4 border-b border-slate-100">
            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
              Question Panel
@@ -481,37 +370,7 @@ function StudentQuestions() {
 
       {/* MAIN CONTENT */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-        <div className="absolute bottom-4 right-4 z-20 w-56 space-y-3">
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow">
-            <div className="border-b border-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
-              Camera
-            </div>
-            <div className="aspect-video bg-slate-900">
-              {hasCameraStream ? (
-                <video ref={cameraPreviewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                  Camera off
-                </div>
-              )}
-            </div>
-          </div>
 
-          <div className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow">
-            <div className="border-b border-slate-100 px-2 py-1 text-[11px] font-semibold text-slate-600">
-              Screen
-            </div>
-            <div className="aspect-video bg-slate-900">
-              {hasScreenStream ? (
-                <video ref={screenPreviewRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full items-center justify-center text-xs text-slate-400">
-                  Screen share off
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
         {/* TOP HEADER */}
         <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm z-10">
           <div className="flex items-center gap-4">

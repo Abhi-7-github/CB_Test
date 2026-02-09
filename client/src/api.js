@@ -6,6 +6,7 @@ const API_ENDPOINTS = {
   submissions: (questionId) => `${API_BASE_URL}/api/questions/${questionId}/submissions`,
   submitTest: `${API_BASE_URL}/api/submit-test`,
   adminVerify: `${API_BASE_URL}/api/admin/verify`,
+  scores: `${API_BASE_URL}/api/scores`,
 }
 
 export { API_BASE_URL, API_ENDPOINTS }

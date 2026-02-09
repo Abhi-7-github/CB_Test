@@ -63,18 +63,17 @@ router.post('/submit-test', async (req, res) => {
       return res.status(400).json({ message: 'Student email is required' });
     }
 
-    // responses is expected to be an object: { questionId: selectedIndex }
+    
     const questionIds = Object.keys(responses || {});
-    // Fetch only MCQ questions that were answered (or all if we want to grade unanswered too, but user just asked for gained marks)
-    // Actually, we should probably fetch all questions to calculate total possible marks if needed, but let's stick to grading the submitted ones for now.
+   
     
     const questions = await Question.find({ _id: { $in: questionIds }, type: 'mcq' });
 
     let totalScore = 0;
-    let totalPossibleMarks = 0; // Of the questions answered. To get true total, we'd need to fetch all questions.
+    let totalPossibleMarks = 0;
     const scoreResponses = [];
 
-    // Create a map for quick lookup
+
     const questionMap = new Map(questions.map(q => [q._id.toString(), q]));
 
     for (const [qId, selectedIdx] of Object.entries(responses)) {
@@ -109,6 +108,16 @@ router.post('/submit-test', async (req, res) => {
     console.error(err);
     res.status(500).json({ message: 'Failed to submit test', error: err.message });
   }
+});
+
+router.get('/scores', async (req, res) => {
+    try {
+        const scores = await Score.find().sort({ score: -1 });
+        res.status(200).json(scores);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Failed to fetch scores', error: err.message });
+    }
 });
 
 module.exports = router;

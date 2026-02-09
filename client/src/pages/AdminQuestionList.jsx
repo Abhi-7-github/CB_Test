@@ -1,0 +1,112 @@
+import { useEffect, useState } from 'react'
+import { API_ENDPOINTS } from '../api'
+import AdminNavbar from '../components/AdminNavbar'
+
+function AdminQuestionList() {
+  const [questions, setQuestions] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetchQuestions()
+  }, [])
+
+  const fetchQuestions = async () => {
+    try {
+      const response = await fetch(API_ENDPOINTS.questions)
+      if (response.ok) {
+        const data = await response.json()
+        setQuestions(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch questions:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <div className="mx-auto max-w-5xl px-4 py-6">
+        <AdminNavbar />
+
+        <div className="mb-6">
+            <h1 className="text-xl font-semibold text-slate-900">Questions List</h1>
+            <p className="mt-1 text-sm text-slate-500">View all questions in the question bank.</p>
+        </div>
+
+        {loading ? (
+            <div className="text-center py-10 text-slate-500">Loading questions...</div>
+        ) : (
+            <div className="space-y-4">
+            {questions.length === 0 ? (
+                <div className="bg-white p-8 rounded-lg border border-slate-200 text-center text-slate-500">
+                    No questions found. Go to "Add Question" to create one.
+                </div>
+            ) : (
+                questions.map((q) => (
+                <div key={q._id} className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+                    <div className="flex justify-between items-start mb-4">
+                        <div>
+                            <span className={`inline-block px-2.5 py-0.5 text-xs font-bold rounded mb-2 uppercase tracking-wide ${
+                                q.type === 'mcq' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
+                            }`}>
+                                {q.type}
+                            </span>
+                            <h3 className="text-lg font-medium text-slate-900 leading-snug">{q.text}</h3>
+                        </div>
+                        <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded select-all">
+                            ID: {q._id}
+                        </span>
+                    </div>
+
+                    {q.type === 'mcq' && (
+                    <div className="bg-slate-50 rounded-md p-4 mb-3 border border-slate-100">
+                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {q.options.map((opt, idx) => (
+                            <li key={idx} className={`flex items-start gap-2 text-sm p-2 rounded ${
+                                idx === q.correctAnswer ? 'bg-green-50 text-green-700 border border-green-200 font-medium' : 'text-slate-600'
+                            }`}>
+                                <span className={`flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-xs border ${
+                                     idx === q.correctAnswer ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300'
+                                }`}>
+                                    {String.fromCharCode(65 + idx)}
+                                </span>
+                                <span>{opt}</span>
+                                {idx === q.correctAnswer && <span className="ml-auto text-xs font-bold uppercase tracking-wider text-green-600">Correct</span>}
+                            </li>
+                            ))}
+                        </ul>
+                    </div>
+                    )}
+
+                    {q.type === 'file' && (
+                        <div className="bg-slate-50 rounded-md p-4 mb-3 border border-slate-100 text-sm text-slate-600">
+                            <div className="flex gap-6">
+                                <div>
+                                    <span className="font-semibold text-slate-900">Allowed Types:</span>
+                                    <span className="ml-2 px-2 py-0.5 bg-white border border-slate-200 rounded text-xs">{q.fileUpload?.accept?.join(', ')}</span>
+                                </div>
+                                <div>
+                                    <span className="font-semibold text-slate-900">Max Size:</span>
+                                    <span className="ml-2">{q.fileUpload?.maxSizeMb} MB</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    <div className="flex items-center justify-end border-t border-slate-100 pt-3">
+                         <span className="text-sm font-semibold text-slate-700">
+                            Marks: <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-900 border border-slate-200">{q.marks}</span>
+                         </span>
+                    </div>
+                </div>
+                ))
+            )}
+            </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default AdminQuestionList

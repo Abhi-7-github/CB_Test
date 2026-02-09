@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import StudentLogin from './pages/StudentLogin'
 import StudentQuestions from './pages/StudentQuestions'
 import AdminQuestions from './pages/AdminQuestions'
+import AdminQuestionList from './pages/AdminQuestionList'
 import AdminTestReset from './pages/AdminTestReset'
 import AdminStudentScore from './pages/AdminStudentScore'
 
@@ -44,6 +45,7 @@ function App() {
 							}
 						/>
             <Route path="/admin" element={<AdminQuestions />} />
+            <Route path="/admin/list" element={<AdminQuestionList />} />
             <Route path="/admin/reset" element={<AdminTestReset />} />
             <Route path="/admin/score" element={<AdminStudentScore />} />
 						<Route path="/login" element={<StudentLogin />} />

@@ -4,50 +4,56 @@ import { API_ENDPOINTS } from '../api'
 
 function SystemCheck() {
   const navigate = useNavigate()
-  const [cameraStream, setCameraStream] = useState(null)
-  const [screenStream, setScreenStream] = useState(null)
+  
+  // Initialize state from existing window streams if available (prevents double permission request on back nav)
+  const [cameraStream, setCameraStream] = useState(() => window.__proctoringStreams?.cameraStream || null)
+  const [screenStream, setScreenStream] = useState(() => window.__proctoringStreams?.screenStream || null)
+  
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [code, setCode] = useState(Array(6).fill(''))
   const [error, setError] = useState('')
   const [totalQuestions, setTotalQuestions] = useState(0)
+  const [isChrome, setIsChrome] = useState(true)
 
   const videoRef = useRef(null)
   const screenRef = useRef(null)
   const inputRefs = useRef([])
 
   useEffect(() => {
+    // Browser Check
+    const isChromeCheck = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+    setIsChrome(isChromeCheck);
+
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement)
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
+    
+    // Auto-attach existing streams to refs if they exist on mount
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream
+    }
+    if (screenStream && screenRef.current) {
+      screenRef.current.srcObject = screenStream
+    }
+
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [])
+  }, [cameraStream, screenStream]) // Dep on streams to ensure re-attach if they were init from window
 
   useEffect(() => {
     let ignore = false
-
     const loadQuestionsCount = async () => {
       try {
         const response = await fetch(API_ENDPOINTS.questions)
-        if (!response.ok) {
-          throw new Error('Failed to load questions')
-        }
+        if (!response.ok) throw new Error('Failed to load questions')
         const data = await response.json()
-        if (!ignore) {
-          setTotalQuestions(Array.isArray(data) ? data.length : 0)
-        }
+        if (!ignore) setTotalQuestions(Array.isArray(data) ? data.length : 0)
       } catch (err) {
-        if (!ignore) {
-          setTotalQuestions(0)
-        }
+        if (!ignore) setTotalQuestions(0)
       }
     }
-
     loadQuestionsCount()
-
-    return () => {
-      ignore = true
-    }
+    return () => { ignore = true }
   }, [])
 
   // Camera Access
@@ -57,9 +63,14 @@ function SystemCheck() {
       setCameraStream(stream)
       if (videoRef.current) {
         videoRef.current.srcObject = stream
-        videoRef.current.play().catch(() => {})
       }
       setError('')
+      
+      // Update global immediately
+      window.__proctoringStreams = {
+          ...window.__proctoringStreams,
+          cameraStream: stream
+      }
     } catch (err) {
       setError('Camera/Microphone access denied or not available.')
     }
@@ -69,15 +80,13 @@ function SystemCheck() {
   const enableScreenShare = async () => {
     try {
       const stream = await navigator.mediaDevices.getDisplayMedia({ 
-        video: { displaySurface: 'monitor' }, // Prefer monitor for full screen
-        audio: false // Usually not needed for proctoring unless system audio is required
+        video: { displaySurface: 'monitor' },
+        audio: false 
       })
       
       const track = stream.getVideoTracks()[0];
       const settings = track.getSettings();
 
-      // Enforce entire screen sharing
-      // Note: displaySurface might not be supported in all browsers or could value 'monitor'/'screen' depending on spec version
       if (settings.displaySurface && settings.displaySurface !== 'monitor' && settings.displaySurface !== 'screen') {
           stream.getTracks().forEach(t => t.stop());
           setError('You must share your ENTIRE SCREEN. Please try again and select the "Entire Screen" tab.');
@@ -87,17 +96,21 @@ function SystemCheck() {
       setScreenStream(stream)
       if (screenRef.current) {
         screenRef.current.srcObject = stream
-        screenRef.current.play().catch(() => {})
       }
       
-      // Handle user stopping share via browser UI
+      // Update global immediately
+      window.__proctoringStreams = {
+          ...window.__proctoringStreams,
+          screenStream: stream
+      }
+      
       track.onended = () => {
         setScreenStream(null)
+        window.__proctoringStreams.screenStream = null;
       };
-      
       setError('')
     } catch (err) {
-        console.error(err)
+      console.error(err)
       setError('Screen sharing cancelled or failed.')
     }
   }
@@ -116,12 +129,9 @@ function SystemCheck() {
   // Code Input Handling
   const handleCodeChange = (index, value) => {
     if (!/^\d*$/.test(value)) return
-
     const newCode = [...code]
     newCode[index] = value
     setCode(newCode)
-
-    // Auto-focus next input
     if (value && index < 5) {
       inputRefs.current[index + 1].focus()
     }
@@ -148,7 +158,6 @@ function SystemCheck() {
       return
     }
     
-    // Code Validation
     const enteredCode = code.join('')
     const validCode = import.meta.env.VITE_VERIFY_CODE
     
@@ -157,14 +166,8 @@ function SystemCheck() {
       return
     }
 
-    window.__proctoringStreams = {
-      cameraStream,
-      screenStream,
-    }
-
-    // Success - In real app, you might want to persist stream tracks or re-request them
-    // For this demo, we assume the next page might re-request or just trust the check passed.
-    // Ideally, pass the state or just set a flag.
+    // Ensure streams are saved (redundant but safe)
+    window.__proctoringStreams = { cameraStream, screenStream }
     localStorage.setItem('systemCheckPassed', 'true')
     navigate('/student')
   }

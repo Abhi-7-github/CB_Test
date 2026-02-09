@@ -352,39 +352,7 @@ function AdminQuestions() {
         </div>
       )}
 
-      {/* Questions List */}
-      <div className="mt-8">
-        <h2 className="text-lg font-semibold text-slate-900 mb-4">Existing Questions</h2>
-        <div className="space-y-4">
-          {questions.length === 0 ? (
-            <p className="text-sm text-slate-500">No questions found.</p>
-          ) : (
-            questions.map((q) => (
-              <div key={q._id} className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <span className="inline-block px-2 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded mb-2">
-                      {q.type.toUpperCase()}
-                    </span>
-                    <h3 className="text-md font-medium text-slate-900">{q.text}</h3>
-                    {q.type === 'mcq' && (
-                      <div className="mt-2 pl-4 border-l-2 border-slate-100">
-                        {q.options.map((opt, idx) => (
-                          <div key={idx} className={`text-sm ${idx === q.correctAnswer ? 'text-green-600 font-semibold' : 'text-slate-600'}`}>
-                            {opt} {idx === q.correctAnswer && '(Correct)'}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <p className="mt-2 text-xs text-slate-500">Marks: {q.marks}</p>
-                  </div>
-                  <span className="text-xs text-slate-400 font-mono">{q._id}</span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+
     </div>
   )
 }
