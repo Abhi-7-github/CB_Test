@@ -80,6 +80,7 @@ function StudentQuestions() {
   const isSubmittedRef = useRef(isSubmitted)
   const studentEmailRef = useRef(studentEmail)
   const isFilePickerOpenRef = useRef(false)
+  const blurTimeoutRef = useRef(null)
 
   useEffect(() => {
       answersRef.current = answers
@@ -136,14 +137,23 @@ function StudentQuestions() {
       }
     }
 
-    // 3. Tab Switching / Window Blur
+
+
+    // 3. Tab Switching / Window Blur (with grace period for system popups)
     const handleBlur = () => {
        if (!isSubmittedRef.current && !isFilePickerOpenRef.current) {
-          handleViolation('Tab switching or window focus lost.')
+          // Delay violation trigger to allow for quick interactions (like "Hide" sharing bar)
+          blurTimeoutRef.current = setTimeout(() => {
+              handleViolation('Tab switching or window focus lost.')
+          }, 5000) // 5 seconds grace period
        }
     }
 
     const handleFocus = () => {
+        if (blurTimeoutRef.current) {
+            clearTimeout(blurTimeoutRef.current)
+            blurTimeoutRef.current = null
+        }
         setTimeout(() => { isFilePickerOpenRef.current = false }, 1000)
     }
 
@@ -158,6 +168,27 @@ function StudentQuestions() {
     document.addEventListener('keydown', handleKeyDown)
     window.addEventListener('blur', handleBlur)
     window.addEventListener('focus', handleFocus)
+    
+    // 5. Prevent Back Navigation & Gestures
+    const handlePopState = (e) => {
+        e.preventDefault()
+        window.history.pushState(null, null, window.location.href)
+    }
+    window.history.pushState(null, null, window.location.href)
+    window.addEventListener('popstate', handlePopState)
+
+    // Prevent horizontal scroll/swipe gestures
+    const preventSwipe = (e) => {
+        // Prevent 2-finger swipe back (horizontal scroll)
+        if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+            e.preventDefault()
+        }
+    }
+    window.addEventListener('wheel', preventSwipe, { passive: false })
+    
+    // CSS to prevent swipe navigation
+    document.body.style.overscrollBehaviorX = 'none'
+
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
     document.addEventListener('mozfullscreenchange', handleFullscreenChange)
@@ -451,13 +482,7 @@ function StudentQuestions() {
           </div>
           
           <div className="flex items-center gap-4">
-             {/* Placeholders for visual match */}
-             <div className="hidden sm:flex items-center gap-2 rounded-md bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700">
-                <span>♥</span> 5 Lives
-             </div>
-             <div className="hidden sm:flex items-center gap-2 rounded-md bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-700">
-                <span>⏱</span> 59:48
-             </div>
+
 
              <button
                 type="button"
