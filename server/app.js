@@ -6,7 +6,10 @@ const questionRoutes = require('./routes/questions');
 const submissionRoutes = require('./routes/submissions');
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: process.env.CLIENT_URL || '*',
+    credentials: true
+}));
 app.use(express.json());
 app.use('/api/questions', questionRoutes);
 app.use('/api', submissionRoutes);
