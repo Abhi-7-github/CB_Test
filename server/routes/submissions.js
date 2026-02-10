@@ -67,12 +67,15 @@ router.post('/submit-test', async (req, res) => {
     const questionIds = Object.keys(responses || {});
    
     
+    
     const questions = await Question.find({ _id: { $in: questionIds }, type: 'mcq' });
 
-    let totalScore = 0;
-    let totalPossibleMarks = 0;
-    const scoreResponses = [];
+    
+    const allQuestions = await Question.find({}); 
+    const totalPossibleMarks = allQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
 
+    let totalScore = 0;
+    
 
     const questionMap = new Map(questions.map(q => [q._id.toString(), q]));
 
@@ -83,14 +86,7 @@ router.post('/submit-test', async (req, res) => {
             const marks = isCorrect ? (question.marks || 1) : 0;
             
             totalScore += marks;
-            totalPossibleMarks += (question.marks || 1);
             
-            scoreResponses.push({
-                questionId: question._id,
-                selectedOption: selectedIdx,
-                isCorrect,
-                marksObtained: marks
-            });
         }
     }
 

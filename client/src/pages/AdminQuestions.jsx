@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { API_ENDPOINTS } from '../api'
 import TextField from '../components/TextField'
 import TextAreaField from '../components/TextAreaField'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import AdminNavbar from '../components/AdminNavbar'
 
@@ -9,9 +10,14 @@ function AdminQuestions() {
   const [adminKey, setAdminKey] = useState('')
   const [isVerified, setIsVerified] = useState(false)
   const [verifyStatus, setVerifyStatus] = useState({ type: 'idle', message: '' })
+  
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [isEditing, setIsEditing] = useState(false)
 
   const [formData, setFormData] = useState({
-    id: '',
+    _id: null,
+    id: '', // User visible ID (e.g. 1, 2, 3)
     type: 'mcq',
     text: '',
     options: [''], // Initialize with one empty option
@@ -28,6 +34,26 @@ function AdminQuestions() {
   useEffect(() => {
     fetchQuestions()
   }, [])
+
+  useEffect(() => {
+    if (location.state?.question) {
+        const q = location.state.question
+        setIsEditing(true)
+        setFormData({
+            _id: q._id,
+            id: q.id || '',
+            type: q.type,
+            text: q.text,
+            options: q.type === 'mcq' ? (q.options.length ? q.options : ['']) : [''],
+            correctAnswer: q.type === 'mcq' ? q.correctAnswer : '',
+            marks: q.marks?.toString() || '1',
+            fileAccept: q.fileUpload?.accept?.join(', ') || '',
+            fileMaxSizeMb: q.fileUpload?.maxSizeMb?.toString() || '5'
+        })
+    } else {
+        setIsEditing(false)
+    }
+  }, [location.state])
 
   const fetchQuestions = async () => {
     try {
@@ -88,8 +114,14 @@ function AdminQuestions() {
     }
 
     try {
-      const response = await fetch(API_ENDPOINTS.questions, {
-        method: 'POST',
+      const url = isEditing 
+        ? `${API_ENDPOINTS.questions}/${formData._id}` 
+        : API_ENDPOINTS.questions
+      
+      const method = isEditing ? 'PUT' : 'POST'
+
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           'x-admin-key': adminKey,
@@ -98,20 +130,24 @@ function AdminQuestions() {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create question')
+        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} question`)
       }
 
-      setStatus({ type: 'success', message: 'Question created.' })
-      setFormData({
-        id: '',
-        type: 'mcq',
-        text: '',
-        options: [''],
-        correctAnswer: '',
-        marks: '1',
-        fileAccept: '',
-        fileMaxSizeMb: '5',
-      })
+      setStatus({ type: 'success', message: `Question ${isEditing ? 'updated' : 'created'}.` })
+      
+      if (!isEditing) {
+          setFormData({
+            _id: null,
+            id: '',
+            type: 'mcq',
+            text: '',
+            options: [''],
+            correctAnswer: '',
+            marks: '1',
+            fileAccept: '',
+            fileMaxSizeMb: '5',
+          })
+      }
       fetchQuestions()
     } catch (err) {
       setStatus({ type: 'error', message: err.message })
@@ -154,11 +190,35 @@ function AdminQuestions() {
   return (
     <div className="grid gap-4">
       {isVerified && <AdminNavbar />}
-      <div>
-        <h1 className="text-xl font-semibold text-slate-900">Admin: Add Question</h1>
-        <p className="mt-1 text-sm text-slate-500">
-          Create a new question for students.
-        </p>
+      <div className="flex items-center justify-between">
+         <div>
+            <h1 className="text-xl font-semibold text-slate-900">{isEditing ? 'Admin: Edit Question' : 'Admin: Add Question'}</h1>
+            <p className="mt-1 text-sm text-slate-500">
+            {isEditing ? 'Update the selected question.' : 'Create a new question for students.'}
+            </p>
+         </div>
+         {isEditing && (
+             <button
+                onClick={() => {
+                    setIsEditing(false)
+                    setFormData({
+                        _id: null,
+                        id: '', 
+                        type: 'mcq',
+                        text: '',
+                        options: [''],
+                        correctAnswer: '',
+                        marks: '1',
+                        fileAccept: '',
+                        fileMaxSizeMb: '5',
+                    })
+                    navigate('/admin') // Clear state
+                }}
+                className="text-sm text-slate-500 hover:text-slate-800 underline"
+             >
+                 Cancel Edit
+             </button>
+         )}
       </div>
 
       {!isVerified && (
@@ -329,7 +389,7 @@ function AdminQuestions() {
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
             disabled={submitting}
           >
-            {submitting ? 'Saving...' : 'Create Question'}
+            {submitting ? 'Saving...' : (isEditing ? 'Update Question' : 'Create Question')}
           </button>
         </form>
       ) : (

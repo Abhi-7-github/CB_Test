@@ -79,6 +79,7 @@ function StudentQuestions() {
   const fileInputsRef = useRef(fileInputs)
   const isSubmittedRef = useRef(isSubmitted)
   const studentEmailRef = useRef(studentEmail)
+  const isFilePickerOpenRef = useRef(false)
 
   useEffect(() => {
       answersRef.current = answers
@@ -99,16 +100,85 @@ function StudentQuestions() {
     return widthGap > 160 || heightGap > 160
   }
 
+  const handleViolation = (reason) => {
+    if (isSubmittedRef.current || autoSubmitTriggeredRef.current) return
+    autoSubmitTriggeredRef.current = true
+    handleSubmitTest(true, { useRefs: true, reason })
+  }
 
-
+  // Anti-cheating & Security
   useEffect(() => {
+    // 1. Disable Right Click
+    const handleContextMenu = (e) => {
+      e.preventDefault()
+      // Optional: warnedRef logic could go here if we wanted to warn before submit
+      // For now, user requested "inspect click also test exit and auto submit"
+      // triggering immediatley might be harsh for just right click, but let's prevent it
+      // and maybe warn. If they mistakenly right click, immediate fail is rough.
+      // But let's assume "if inspect click" implies trying to inspect.
+      // We will just block it. If they try shortcuts, we submit.
+    }
+
+    // 2. Disable Keyboard Shortcuts for DevTools
+    const handleKeyDown = (e) => {
+      // F12
+      if (e.key === 'F12') {
+        e.preventDefault()
+        handleViolation('Inspector usage attempt detected.')
+      }
+      // Ctrl+Shift+I (Inspect), Ctrl+Shift+J (Console), Ctrl+Shift+C (Element Inspector), Ctrl+U (Source)
+      if (
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && e.key === 'U')
+      ) {
+        e.preventDefault()
+        handleViolation('Inspector usage attempt detected.')
+      }
+    }
+
+    // 3. Tab Switching / Window Blur
+    const handleBlur = () => {
+       if (!isSubmittedRef.current && !isFilePickerOpenRef.current) {
+          handleViolation('Tab switching or window focus lost.')
+       }
+    }
+
+    const handleFocus = () => {
+        setTimeout(() => { isFilePickerOpenRef.current = false }, 1000)
+    }
+
+    // 4. Fullscreen Exit Detection
+    const handleFullscreenChange = () => {
+        if (!getFullscreenElement() && !isSubmittedRef.current) {
+             handleViolation('Fullscreen mode exited.')
+        }
+    }
+
+    document.addEventListener('contextmenu', handleContextMenu)
+    document.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('blur', handleBlur)
+    window.addEventListener('focus', handleFocus)
+    document.addEventListener('fullscreenchange', handleFullscreenChange)
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange)
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange)
+
+    // Interval for DevTools check (using dimensions)
     const intervalId = setInterval(() => {
       if (isDevToolsOpen() && !isSubmittedRef.current) {
-        handleViolation('Developer tools detected.', isDevToolsOpen)
+        handleViolation('Developer tools detected.')
       }
     }, 1000)
 
     return () => {
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('blur', handleBlur)
+      window.removeEventListener('focus', handleFocus)
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange)
       clearInterval(intervalId)
     }
   }, [])
@@ -391,7 +461,7 @@ function StudentQuestions() {
 
              <button
                 type="button"
-                onClick={handleSubmitTest}
+                onClick={() => handleSubmitTest(false)}
                 className="rounded-md bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95"
                 disabled={isSubmitted}
               >
@@ -521,6 +591,7 @@ function StudentQuestions() {
                                       onChange={(event) =>
                                          handleFileChange(qId, event.target.files?.[0] || null)
                                       }
+                                      onClick={() => { isFilePickerOpenRef.current = true }}
                                       className="file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 text-sm text-slate-500"
                                       disabled={isSubmitted}
                                    />

@@ -21,6 +21,30 @@ router.post('/', requireAdmin, async (req, res) => {
   }
 });
 
+router.put('/:id', requireAdmin, async (req, res) => {
+  try {
+    const question = await Question.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!question) {
+        return res.status(404).json({ message: 'Question not found' });
+    }
+    return res.json(question);
+  } catch (err) {
+    return res.status(400).json({ message: 'Failed to update question', error: err.message });
+  }
+});
+
+router.delete('/:id', requireAdmin, async (req, res) => {
+  try {
+    const question = await Question.findByIdAndDelete(req.params.id);
+    if (!question) {
+        return res.status(404).json({ message: 'Question not found' });
+    }
+    return res.json({ message: 'Question deleted successfully' });
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to delete question', error: err.message });
+  }
+});
+
 router.get('/', async (req, res) => {
   try {
     const questions = await Question.find().sort({ createdAt: -1 });
