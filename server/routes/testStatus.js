@@ -3,7 +3,7 @@ const router = express.Router();
 const TestStatus = require('../models/TestStatus');
 
 
-// Get current test status
+
 router.get('/', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   console.log('Test status requested');
