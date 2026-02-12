@@ -3,6 +3,14 @@ const Question = require('../models/Question');
 
 const router = express.Router();
 
+function shuffleInPlace(items) {
+  for (let i = items.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [items[i], items[j]] = [items[j], items[i]];
+  }
+  return items;
+}
+
 function requireAdmin(req, res, next) {
   const adminKey = req.header('x-admin-key');
   if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
@@ -48,7 +56,7 @@ router.delete('/:id', requireAdmin, async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const questions = await Question.find().sort({ createdAt: -1 });
-    return res.json(questions);
+    return res.json(shuffleInPlace(questions));
   } catch (err) {
     return res.status(500).json({ message: 'Failed to fetch questions' });
   }

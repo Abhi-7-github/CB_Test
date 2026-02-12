@@ -16,6 +16,7 @@ app.use(cors({
 app.use(express.json());
 app.use('/api/questions', questionRoutes);
 app.use('/api', submissionRoutes);
+app.use('/api/test-status', require('./routes/testStatus'));
 
 app.post('/api/admin/verify', (req, res) => {
     const adminKey = req.header('x-admin-key');

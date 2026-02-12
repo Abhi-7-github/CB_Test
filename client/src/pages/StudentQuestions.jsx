@@ -24,37 +24,95 @@ function StudentQuestions() {
   // const cameraPreviewRef = useRef(null)
   const screenPreviewRef = useRef(null)
   // const [hasCameraStream, setHasCameraStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.cameraStream))
-  const [hasScreenStream, setHasScreenStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.screenStream))
+  const [hasScreenStream, setHasScreenStream] = useState(true)
+
   const [showFinishModal, setShowFinishModal] = useState(false)
+  const [isTestActive, setIsTestActive] = useState(false)
+  const [statusChecked, setStatusChecked] = useState(false)
+  const [hasStartedExam, setHasStartedExam] = useState(false)
+
+  // Use refs for checking conditions inside event listeners without dependency issues
+  const isTestActiveRef = useRef(false)
+  const hasStartedExamRef = useRef(false)
 
   useEffect(() => {
-    let ignore = false
+    isTestActiveRef.current = isTestActive
+    hasStartedExamRef.current = hasStartedExam
+  }, [isTestActive, hasStartedExam])
 
+  useEffect(() => {
+     // Question loading
+    let ignore = false
     const loadQuestions = async () => {
       try {
         const response = await fetch(API_ENDPOINTS.questions)
-        if (!response.ok) {
-          throw new Error('Failed to load questions')
-        }
+        if (!response.ok) throw new Error('Failed to load questions')
         const data = await response.json()
-        if (!ignore) {
-          setQuestions(data)
-        }
+        if (!ignore) setQuestions(data)
       } catch (err) {
-        if (!ignore) {
-          setError(err.message)
-        }
+        if (!ignore) setError(err.message)
       } finally {
-        if (!ignore) {
-          setLoading(false)
-        }
+        if (!ignore) setLoading(false)
+      }
+    }
+    loadQuestions()
+    return () => { ignore = true }
+  }, [])
+
+  useEffect(() => {
+     // Screen share tracking
+     if (window.__proctoringStreams?.screenStream) {
+         const stream = window.__proctoringStreams.screenStream;
+         const track = stream.getVideoTracks()[0];
+         
+         const handleTrackEnded = () => {
+             // Use refs to check current status without stale closures
+             if (hasStartedExamRef.current && !isSubmittedRef.current) {
+                 handleViolation('Screen sharing was stopped manually.')
+             }
+         }
+
+         if(track) {
+            track.addEventListener('ended', handleTrackEnded);
+            return () => {
+                track.removeEventListener('ended', handleTrackEnded);
+            }
+         }
+     }
+  }, [])
+
+  // Check test status & Screen Share liveness
+  useEffect(() => {
+    let intervalId = null
+
+    const checkStatus = async () => {
+      // 1. Check if test was stopped by admin
+      try {
+        const res = await fetch(API_ENDPOINTS.testStatus, { cache: 'no-store' })
+        const data = await res.json()
+        setIsTestActive(data.isTestActive)
+        setStatusChecked(true)
+      } catch (err) {
+        console.error('Failed to check status', err)
+      }
+
+      // 2. Check if screen share is still active (Only if exam started)
+      if (hasStartedExamRef.current && !isSubmittedRef.current) {
+          // Check if global stream object is valid
+          const stream = window.__proctoringStreams?.screenStream;
+          const isStreamActive = stream && stream.active && stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].readyState === 'live';
+          
+          if (!isStreamActive) {
+             handleViolation('Screen sharing was stopped or permission revoked.');
+          }
       }
     }
 
-    loadQuestions()
+    checkStatus()
+    intervalId = setInterval(checkStatus, 2000) // Increased frequency for better security
 
     return () => {
-      ignore = true
+      if (intervalId) clearInterval(intervalId)
     }
   }, [])
 
@@ -96,6 +154,19 @@ function StudentQuestions() {
     document.mozFullScreenElement ||
     document.msFullscreenElement
 
+  const enterFullscreen = () => {
+    const docEl = document.documentElement
+    if (docEl.requestFullscreen) {
+      docEl.requestFullscreen().catch(() => {})
+    } else if (docEl.mozRequestFullScreen) {
+      docEl.mozRequestFullScreen().catch(() => {})
+    } else if (docEl.webkitRequestFullscreen) {
+      docEl.webkitRequestFullscreen().catch(() => {})
+    } else if (docEl.msRequestFullscreen) {
+      docEl.msRequestFullscreen().catch(() => {})
+    }
+  }
+
   const isDevToolsOpen = () => {
     const widthGap = Math.abs(window.outerWidth - window.innerWidth)
     const heightGap = Math.abs(window.outerHeight - window.innerHeight)
@@ -103,7 +174,10 @@ function StudentQuestions() {
   }
 
   const handleViolation = (reason) => {
+    // Only handle violations if the test is active AND the student has actually started the exam
+    if (!isTestActiveRef.current || !hasStartedExamRef.current) return
     if (isSubmittedRef.current || autoSubmitTriggeredRef.current) return
+    
     autoSubmitTriggeredRef.current = true
     handleSubmitTest(true, { useRefs: true, reason })
   }
@@ -160,8 +234,11 @@ function StudentQuestions() {
 
     // 4. Fullscreen Exit Detection
     const handleFullscreenChange = () => {
-        if (!getFullscreenElement() && !isSubmittedRef.current) {
-             handleViolation('Fullscreen mode exited.')
+        // Only check if test is active AND started
+        if (isTestActiveRef.current && hasStartedExamRef.current) {
+            if (!getFullscreenElement() && !isSubmittedRef.current) {
+                handleViolation('Fullscreen mode exited.')
+            }
         }
     }
 
@@ -197,8 +274,11 @@ function StudentQuestions() {
 
     // Interval for DevTools check (using dimensions)
     const intervalId = setInterval(() => {
-      if (isDevToolsOpen() && !isSubmittedRef.current) {
-        handleViolation('Developer tools detected.')
+      // Only check if test is active AND started
+      if (isTestActiveRef.current && hasStartedExamRef.current) {
+          if (isDevToolsOpen() && !isSubmittedRef.current) {
+            handleViolation('Developer tools detected.')
+          }
       }
     }, 1000)
 
@@ -215,8 +295,66 @@ function StudentQuestions() {
     }
   }, [])
 
-  if (loading) {
-    return <p className="text-sm text-slate-500">Loading questions...</p>
+  if (loading || !statusChecked) {
+    return (
+        <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+            <div className="text-center">
+                <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600 mx-auto"></div>
+                <p className="text-sm font-medium text-slate-500">Loading assessment...</p>
+            </div>
+        </div>
+    )
+  }
+
+  if (!isTestActive && !isSubmitted) {
+      return (
+        <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 px-4 text-center">
+            <div className="max-w-md rounded-2xl bg-white p-10 shadow-xl ring-1 ring-slate-900/5">
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <h1 className="mb-3 text-2xl font-bold text-slate-900">Waiting for Exam to Start</h1>
+                <p className="text-slate-500 mb-8">
+                    The assessment has not been started by the administrator yet.<br/>
+                    Please wait, the page will refresh automatically.
+                </p>
+                <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                    </span>
+                    Live Status Check
+                </div>
+            </div>
+        </div>
+      )
+  }
+
+  // New Block: Test is Active, but Student hasn't explicitly started (clicked the button to enter fullscreen/set state)
+  if (isTestActive && !hasStartedExam && !isSubmitted) {
+      return (
+        <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 px-4 text-center">
+            <div className="max-w-md rounded-2xl bg-white p-10 shadow-xl ring-1 ring-slate-900/5">
+                <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
+                <h1 className="mb-3 text-2xl font-bold text-slate-900">Assessment Ready</h1>
+                <p className="text-slate-500 mb-8">
+                    The assessment is live. Click the button below to enter fullscreen mode and begin.<br/>
+                    <span className="text-rose-500 text-xs font-bold mt-2 block">Note: Exiting fullscreen will trigger an auto-submission.</span>
+                </p>
+                <button 
+                    onClick={() => {
+                        enterFullscreen()
+                        setHasStartedExam(true)
+                    }}
+                    className="w-full rounded-lg bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-lg hover:bg-emerald-700 transition-transform active:scale-95"
+                >
+                    Start Assessment
+                </button>
+            </div>
+        </div>
+      )
   }
 
   if (error) {
@@ -395,7 +533,7 @@ function StudentQuestions() {
                         ref={el => {
                              if (el && window.__proctoringStreams?.screenStream) {
                                 el.srcObject = window.__proctoringStreams.screenStream
-                                el.play().catch(() => {})
+                                // el.play().catch(() => {}) // AutoPlay handles this usually
                             }
                             screenPreviewRef.current = el
                         }}

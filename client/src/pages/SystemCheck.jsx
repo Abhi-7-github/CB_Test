@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { API_ENDPOINTS } from '../api'
+import { API_ENDPOINTS, API_BASE_URL } from '../api'
 
 function SystemCheck() {
   const navigate = useNavigate()
@@ -144,7 +144,7 @@ function SystemCheck() {
   }
 
   // Validation & Start
-  const startAssessment = () => {
+  const startAssessment = async () => {
     // if (!cameraStream) {
     //   setError('Please enable your camera and microphone.')
     //   return
@@ -163,6 +163,34 @@ function SystemCheck() {
     
     if (enteredCode !== validCode) {
       setError('Invalid security code.')
+      return
+    }
+
+    try {
+      const targetUrl = API_ENDPOINTS.testStatus;
+      console.log('Using API Base URL from env:', import.meta.env.VITE_API_BASE_URL);
+      console.log('Constructed Target URL:', targetUrl);
+
+      const res = await fetch(targetUrl, { 
+          cache: 'no-store',
+          headers: { 'Accept': 'application/json' } 
+      })
+      
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.indexOf("application/json") === -1) {
+          const text = await res.text();
+          console.error('Received non-JSON response from test status endpoint:', text.substring(0, 200)); 
+          throw new Error('Received non-JSON response from server. Check API URL or Server Status.');
+      }
+
+      const data = await res.json()
+      if (!data.isTestActive) {
+          alert('The assessment has not been started by the administrator yet.\nPlease wait for the admin to start the test.')
+          return
+      }
+    } catch (err) {
+      console.error('Failed to check status', err)
+      setError('Failed to verify test status. Please check your connection or contact admin.')
       return
     }
 
