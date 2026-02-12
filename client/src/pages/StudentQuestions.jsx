@@ -25,6 +25,7 @@ function StudentQuestions() {
   const screenPreviewRef = useRef(null)
   // const [hasCameraStream, setHasCameraStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.cameraStream))
   const [hasScreenStream, setHasScreenStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.screenStream))
+  const [showFinishModal, setShowFinishModal] = useState(false)
 
   useEffect(() => {
     let ignore = false
@@ -278,7 +279,7 @@ function StudentQuestions() {
   }
 
   async function handleSubmitTest(forced = false, options = {}) {
-    const { useRefs = false, reason = '' } = options
+    const { useRefs = false, reason = '', skipConfirm = false } = options
     const currentStudentEmail = useRefs ? studentEmailRef.current : studentEmail
     const currentAnswers = useRefs ? answersRef.current : answers
     const currentFileInputs = useRefs ? fileInputsRef.current : fileInputs
@@ -295,16 +296,18 @@ function StudentQuestions() {
     }
 
     if (!forced) {
-        // Calculate answered questions count
-        const answeredIds = new Set([
-            ...Object.keys(currentAnswers),
-            ...Object.keys(currentFileInputs).filter(id => currentFileInputs[id])
-        ])
-        const count = answeredIds.size
-        const total = questions.length
+        if (!skipConfirm) {
+            // Calculate answered questions count
+            const answeredIds = new Set([
+                ...Object.keys(currentAnswers),
+                ...Object.keys(currentFileInputs).filter(id => currentFileInputs[id])
+            ])
+            const count = answeredIds.size
+            const total = questions.length
 
-        if (!window.confirm(`Do you want to submit the test?\n\nAttempted: ${count}\nTotal: ${total}`)) {
-            return
+            if (!window.confirm(`Do you want to submit the test?\n\nAttempted: ${count}\nTotal: ${total}`)) {
+                return
+            }
         }
     } else {
         const alertMessage = reason || 'Fullscreen mode exited. Auto-submitting test.'
@@ -487,7 +490,7 @@ function StudentQuestions() {
 
              <button
                 type="button"
-                onClick={() => handleSubmitTest(false)}
+                onClick={() => setShowFinishModal(true)}
                 className="rounded-md bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95"
                 disabled={isSubmitted}
               >
@@ -693,6 +696,71 @@ function StudentQuestions() {
           )}
         </div>
       </main>
+
+      {/* Custom Finish Assessment Modal */}
+      {showFinishModal && (() => {
+         const answeredCount = new Set([
+             ...Object.keys(answers),
+             ...Object.keys(fileInputs).filter(id => fileInputs[id])
+         ]).size
+         const totalQuestions = questions.length
+         const unansweredCount = totalQuestions - answeredCount
+         const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
+         
+         return (
+           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+             <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
+               {/* Header */}
+               <div className="flex items-center justify-between p-6 pb-2">
+                 <h3 className="text-xl font-bold text-slate-900">Finish Assessment?</h3>
+                 <button 
+                   onClick={() => setShowFinishModal(false)}
+                   className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                 >
+                   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                 </button>
+               </div>
+               
+               {/* Body */}
+               <div className="px-6 py-4">
+                 <p className="text-sm font-medium text-slate-600 mb-3">Total Questions: <span className="text-slate-900 font-bold">{totalQuestions}</span></p>
+                 
+                 {/* Progress Bar */}
+                 <div className="h-6 w-full bg-blue-100 border border-blue-200 overflow-hidden mb-4 relative">
+                    <div 
+                      className="h-full bg-blue-600 transition-all duration-500 ease-out"
+                      style={{ width: `${progress}%` }}
+                    ></div>
+                 </div>
+                 
+                 <div className="flex items-center justify-between text-base font-medium mb-6">
+                    <div className="flex flex-col">
+                      <span className="text-slate-500 text-sm">Answered</span>
+                      <span className="text-2xl font-bold text-slate-900">{answeredCount}</span>
+                    </div>
+                    <div className="flex flex-col items-end">
+                      <span className="text-slate-500 text-sm">Unanswered</span>
+                      <span className="text-2xl font-bold text-slate-900">{unansweredCount}</span>
+                    </div>
+                 </div>
+                 
+                 {/* Footer */}
+                 <div className="flex justify-center pt-2">
+                    <button
+                      onClick={() => {
+                        setShowFinishModal(false)
+                        handleSubmitTest(false, { skipConfirm: true })
+                      }}
+                      className="w-full rounded-none bg-black py-4 text-base font-bold text-white shadow-lg hover:bg-slate-800 transition-all active:scale-[0.99] flex items-center justify-center gap-2"
+                    >
+                      Yes, Finish Assessment
+                    </button>
+                 </div>
+               </div>
+             </div>
+           </div>
+         )
+      })()}
     </div>
   )
 }
