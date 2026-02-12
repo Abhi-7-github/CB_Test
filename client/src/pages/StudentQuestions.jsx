@@ -343,7 +343,7 @@ function StudentQuestions() {
       
       localStorage.setItem(`testSubmitted:${currentStudentEmail}`, 'true')
       setIsSubmitted(true)
-      navigate('/')
+      // navigate('/')
     } catch (err) {
        setSubmitStatus({ type: 'error', message: err.message })
     }
@@ -501,13 +501,7 @@ function StudentQuestions() {
 
         {/* QUESTION AREA */}
         <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
-           {isSubmitted && (
-            <div className="w-full mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-emerald-800 shadow-sm">
-               <h3 className="font-bold">Test Submitted!</h3>
-               <p className="text-sm mt-1">Your response has been recorded.</p>
-               {submitStatus.message && <div className="mt-2 text-sm font-semibold">{submitStatus.message}</div>}
-            </div>
-          )}
+
 
            {/* Alerts */}
            {submitStatus.message && !isSubmitted && submitStatus.type === 'error' && (
@@ -761,6 +755,27 @@ function StudentQuestions() {
            </div>
          )
       })()}
+      {/* Success Card Modal - Shown when isSubmitted is true */}
+      {isSubmitted && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-50/95 backdrop-blur-sm p-4 animate-in fade-in duration-500">
+             <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5 text-center p-10 transform transition-all scale-100">
+                <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 mb-6 animate-bounce">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <h2 className="text-3xl font-bold text-slate-900 mb-2">Excellent!</h2>
+                <h3 className="text-xl font-semibold text-slate-700 mb-6">Exam Submitted Successfully</h3>
+                <p className="text-slate-500 mb-8 leading-relaxed">
+                    Your assessment has been recorded securely.<br/>You may now exit the exam window.
+                </p>
+                <button 
+                    onClick={() => navigate('/')}
+                    className="w-full rounded-xl bg-slate-900 py-4 text-lg font-bold text-white shadow-xl hover:bg-slate-800 hover:shadow-2xl transition-all active:scale-[0.98]"
+                >
+                    Return to Home
+                </button>
+             </div>
+        </div>
+      )}
     </div>
   )
 }
