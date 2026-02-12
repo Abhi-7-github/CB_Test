@@ -41,6 +41,34 @@ function SystemCheck() {
   }, [/* cameraStream, */ screenStream]) // Dep on streams to ensure re-attach if they were init from window
 
   useEffect(() => {
+    const handleContextMenu = (event) => {
+      event.preventDefault()
+    }
+
+    const handleKeyDownGlobal = (event) => {
+      const key = event.key?.toLowerCase()
+
+      const isDevtoolsShortcut =
+        key === 'f12' ||
+        (event.ctrlKey && event.shiftKey && (key === 'i' || key === 'j' || key === 'c')) ||
+        (event.ctrlKey && key === 'u')
+
+      if (isDevtoolsShortcut) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+
+    document.addEventListener('contextmenu', handleContextMenu)
+    document.addEventListener('keydown', handleKeyDownGlobal, true)
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu)
+      document.removeEventListener('keydown', handleKeyDownGlobal, true)
+    }
+  }, [])
+
+  useEffect(() => {
     let ignore = false
     const loadQuestionsCount = async () => {
       try {
