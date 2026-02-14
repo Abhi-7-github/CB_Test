@@ -17,14 +17,16 @@ function StudentQuestions() {
   const [answers, setAnswers] = useState({})
   const [markedForReview, setMarkedForReview] = useState({})
   const [result, setResult] = useState(null)
+  const examDurationSeconds = 20 * 60
+  const [remainingSeconds, setRemainingSeconds] = useState(examDurationSeconds)
   const wasFullscreenRef = useRef(false)
   const autoSubmitTriggeredRef = useRef(false)
   const warnedRef = useRef(false)
   const violationTimerRef = useRef(null)
-  // const cameraPreviewRef = useRef(null)
+  const cameraPreviewRef = useRef(null)
   const screenPreviewRef = useRef(null)
-  // const [hasCameraStream, setHasCameraStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.cameraStream))
-  const [hasScreenStream, setHasScreenStream] = useState(true)
+  const [hasCameraStream, setHasCameraStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.cameraStream))
+  const [hasScreenStream, setHasScreenStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.screenStream))
 
   const [showFinishModal, setShowFinishModal] = useState(false)
   const [isTestActive, setIsTestActive] = useState(false)
@@ -65,11 +67,12 @@ function StudentQuestions() {
          const stream = window.__proctoringStreams.screenStream;
          const track = stream.getVideoTracks()[0];
          
-         const handleTrackEnded = () => {
+        const handleTrackEnded = () => {
              // Use refs to check current status without stale closures
              if (hasStartedExamRef.current && !isSubmittedRef.current) {
                  handleViolation('Screen sharing was stopped manually.')
              }
+           setHasScreenStream(false)
          }
 
          if(track) {
@@ -78,6 +81,31 @@ function StudentQuestions() {
                 track.removeEventListener('ended', handleTrackEnded);
             }
          }
+     }
+  }, [])
+
+  useEffect(() => {
+     // Camera tracking
+     if (window.__proctoringStreams?.cameraStream) {
+        const stream = window.__proctoringStreams.cameraStream
+        const track = stream.getVideoTracks()[0]
+
+        const handleTrackEnded = () => {
+          if (hasStartedExamRef.current && !isSubmittedRef.current) {
+            handleViolation('Camera was stopped manually.')
+          }
+          setHasCameraStream(false)
+        }
+
+        if (track) {
+          setHasCameraStream(true)
+          track.addEventListener('ended', handleTrackEnded)
+          return () => {
+            track.removeEventListener('ended', handleTrackEnded)
+          }
+        }
+     } else {
+        setHasCameraStream(false)
      }
   }, [])
 
@@ -140,6 +168,8 @@ function StudentQuestions() {
   const studentEmailRef = useRef(studentEmail)
   const isFilePickerOpenRef = useRef(false)
   const blurTimeoutRef = useRef(null)
+  const examStartRef = useRef(null)
+  const timerIntervalRef = useRef(null)
 
   useEffect(() => {
       answersRef.current = answers
@@ -147,6 +177,48 @@ function StudentQuestions() {
       isSubmittedRef.current = isSubmitted
       studentEmailRef.current = studentEmail
   }, [answers, fileInputs, isSubmitted, studentEmail])
+
+  useEffect(() => {
+    if (!hasStartedExam || isSubmitted) {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
+      return
+    }
+
+    if (!examStartRef.current) {
+      examStartRef.current = Date.now()
+    }
+
+    const tick = () => {
+      const elapsedSeconds = Math.floor((Date.now() - examStartRef.current) / 1000)
+      const nextRemaining = Math.max(0, examDurationSeconds - elapsedSeconds)
+      setRemainingSeconds(nextRemaining)
+
+      if (nextRemaining === 0 && !isSubmittedRef.current && !autoSubmitTriggeredRef.current) {
+        autoSubmitTriggeredRef.current = true
+        handleSubmitTest(true, { useRefs: true, reason: 'Time is up. Auto-submitting test.' })
+      }
+    }
+
+    tick()
+    timerIntervalRef.current = setInterval(tick, 1000)
+
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current)
+        timerIntervalRef.current = null
+      }
+    }
+  }, [hasStartedExam, isSubmitted, examDurationSeconds])
+
+  const formatTime = (totalSeconds) => {
+    const safeSeconds = Math.max(0, totalSeconds)
+    const minutes = Math.floor(safeSeconds / 60)
+    const seconds = safeSeconds % 60
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+  }
 
   const getFullscreenElement = () =>
     document.fullscreenElement ||
@@ -495,9 +567,8 @@ function StudentQuestions() {
         <div className="p-4 border-b border-slate-100">
            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Monitoring</h2>
            <div className="grid grid-cols-2 gap-2">
-              {/* Camera */}
-              {/* Camera */}
-              {/* <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
+                {/* Camera */}
+                <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
                   <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
                      <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
                      <span className="text-[8px] font-bold text-white uppercase tracking-wider shadow-black drop-shadow-md">Camera</span>
@@ -520,7 +591,7 @@ function StudentQuestions() {
                      <div className="flex h-full items-center justify-center text-[8px] text-slate-400">Off</div>
                   )}
                   {hasCameraStream && <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 border border-white animate-pulse shadow-sm" />}
-              </div> */}
+                  </div>
 
                {/* Screen */}
               <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
@@ -623,8 +694,20 @@ function StudentQuestions() {
             </span>
           </div>
           
-          <div className="flex items-center gap-4">
-
+           <div className="flex items-center gap-4">
+             <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm">
+              <div className="text-xs">
+                <div className="font-semibold text-slate-800">{studentEmail || 'Unknown email'}</div>
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">Student</div>
+              </div>
+              <div className="h-8 w-px bg-slate-200" />
+              <div className="text-right">
+                <div className="text-[10px] uppercase tracking-wider text-slate-500">Time Left</div>
+                <div className={`text-sm font-bold ${remainingSeconds <= 60 ? 'text-rose-600' : 'text-slate-900'}`}>
+                  {formatTime(remainingSeconds)}
+                </div>
+              </div>
+             </div>
 
              <button
                 type="button"
