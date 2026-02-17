@@ -21,6 +21,14 @@ function requireAdmin(req, res, next) {
 
 router.post('/', requireAdmin, async (req, res) => {
   try {
+    if (Array.isArray(req.body)) {
+      if (req.body.length === 0) {
+        return res.status(400).json({ message: 'No questions provided' });
+      }
+      const saved = await Question.insertMany(req.body, { ordered: false });
+      return res.status(201).json(saved);
+    }
+
     const question = new Question(req.body);
     const saved = await question.save();
     return res.status(201).json(saved);
@@ -28,6 +36,7 @@ router.post('/', requireAdmin, async (req, res) => {
     return res.status(400).json({ message: 'Failed to create question', error: err.message });
   }
 });
+
 
 router.put('/:id', requireAdmin, async (req, res) => {
   try {

@@ -6,7 +6,7 @@ function SystemCheck() {
   const navigate = useNavigate()
   
   // Initialize state from existing window streams if available (prevents double permission request on back nav)
-  const [cameraStream, setCameraStream] = useState(() => window.__proctoringStreams?.cameraStream || null)
+  // Camera is disabled for this flow.
   const [screenStream, setScreenStream] = useState(() => window.__proctoringStreams?.screenStream || null)
   
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -15,7 +15,6 @@ function SystemCheck() {
   const [totalQuestions, setTotalQuestions] = useState(0)
   const [isChrome, setIsChrome] = useState(true)
 
-  const videoRef = useRef(null)
   const screenRef = useRef(null)
   const inputRefs = useRef([])
 
@@ -30,15 +29,12 @@ function SystemCheck() {
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     
     // Auto-attach existing streams to refs if they exist on mount
-    if (cameraStream && videoRef.current) {
-      videoRef.current.srcObject = cameraStream
-    }
     if (screenStream && screenRef.current) {
       screenRef.current.srcObject = screenStream
     }
 
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [cameraStream, screenStream]) // Dep on streams to ensure re-attach if they were init from window
+  }, [screenStream]) // Dep on streams to ensure re-attach if they were init from window
 
   useEffect(() => {
     const handleContextMenu = (event) => {
@@ -83,26 +79,6 @@ function SystemCheck() {
     loadQuestionsCount()
     return () => { ignore = true }
   }, [])
-
-  // Camera Access
-  const enableCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      setCameraStream(stream)
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-      }
-      setError('')
-      
-      // Update global immediately
-      window.__proctoringStreams = {
-          ...window.__proctoringStreams,
-          cameraStream: stream
-      }
-    } catch (err) {
-      setError('Camera/Microphone access denied or not available.')
-    }
-  }
 
   // Screen Share Access
   const enableScreenShare = async () => {
@@ -173,10 +149,6 @@ function SystemCheck() {
 
   // Validation & Start
   const startAssessment = async () => {
-    if (!cameraStream) {
-      setError('Please enable your camera and microphone.')
-      return
-    }
     if (!screenStream) {
       setError('Please share your entire screen.')
       return
@@ -223,7 +195,7 @@ function SystemCheck() {
     }
 
     // Ensure streams are saved (redundant but safe)
-    window.__proctoringStreams = { cameraStream, screenStream }
+    window.__proctoringStreams = { ...window.__proctoringStreams, screenStream }
     localStorage.setItem('systemCheckPassed', 'true')
     navigate('/student')
   }
@@ -282,30 +254,12 @@ function SystemCheck() {
             {/* Main Content */}
             <main className="flex-1 p-8">
                 <h2 className="mb-2 text-2xl font-bold text-slate-800">System Check</h2>
-                <p className="mb-8 text-slate-500">Enable access to your camera and screen sharing</p>
+                <p className="mb-8 text-slate-500">Enable access to screen sharing</p>
                 
                 {/* Media Checks Grid */}
                 <div className="mb-8 grid gap-8 md:grid-cols-2">
                     
-                    {/* Camera Box */}
-                    <div className="flex flex-col gap-4">
-                        <div className="relative flex aspect-video items-center justify-center rounded-lg bg-slate-800 text-slate-400 overflow-hidden">
-                            {cameraStream ? (
-                              <video ref={videoRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-                            ) : (
-                                <div className="flex flex-col items-center gap-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                                    <span>Camera Off</span>
-                                </div>
-                            )}
-                        </div>
-                        <button 
-                            onClick={enableCamera}
-                            className={`w-full rounded-full py-3 font-semibold text-white transition-colors ${cameraStream ? 'bg-[#00C853] hover:bg-[#009624]' : 'bg-blue-600 hover:bg-blue-700'}`}
-                        >
-                            {cameraStream ? 'Camera Enabled' : 'Turn on camera & mic'}
-                        </button>
-                      </div>
+                    {/* Camera Box (disabled) */}
 
                     {/* Screen Share Box */}
                      <div className="flex flex-col gap-4">

@@ -4,7 +4,7 @@ const { Schema, model } = mongoose;
 
 const QuestionSchema = new Schema(
   {
-    id: { type: String, unique: true },
+    id: { type: String, unique: true, sparse: true },
     type: {
       type: String,
       enum: ['mcq', 'coding', 'file'],

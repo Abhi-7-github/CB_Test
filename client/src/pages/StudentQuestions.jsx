@@ -23,9 +23,7 @@ function StudentQuestions() {
   const autoSubmitTriggeredRef = useRef(false)
   const warnedRef = useRef(false)
   const violationTimerRef = useRef(null)
-  const cameraPreviewRef = useRef(null)
   const screenPreviewRef = useRef(null)
-  const [hasCameraStream, setHasCameraStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.cameraStream))
   const [hasScreenStream, setHasScreenStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.screenStream))
 
   const [showFinishModal, setShowFinishModal] = useState(false)
@@ -84,30 +82,7 @@ function StudentQuestions() {
      }
   }, [])
 
-  useEffect(() => {
-     // Camera tracking
-     if (window.__proctoringStreams?.cameraStream) {
-        const stream = window.__proctoringStreams.cameraStream
-        const track = stream.getVideoTracks()[0]
-
-        const handleTrackEnded = () => {
-          if (hasStartedExamRef.current && !isSubmittedRef.current) {
-            handleViolation('Camera was stopped manually.')
-          }
-          setHasCameraStream(false)
-        }
-
-        if (track) {
-          setHasCameraStream(true)
-          track.addEventListener('ended', handleTrackEnded)
-          return () => {
-            track.removeEventListener('ended', handleTrackEnded)
-          }
-        }
-     } else {
-        setHasCameraStream(false)
-     }
-  }, [])
+  // Camera tracking disabled.
 
   // Check test status & Screen Share liveness
   useEffect(() => {
@@ -567,31 +542,7 @@ function StudentQuestions() {
         <div className="p-4 border-b border-slate-100">
            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Monitoring</h2>
            <div className="grid grid-cols-2 gap-2">
-                {/* Camera */}
-                <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
-                  <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
-                     <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                     <span className="text-[8px] font-bold text-white uppercase tracking-wider shadow-black drop-shadow-md">Camera</span>
-                  </div>
-                  {hasCameraStream ? (
-                     <video 
-                        ref={el => {
-                            if (el && window.__proctoringStreams?.cameraStream) {
-                                el.srcObject = window.__proctoringStreams.cameraStream
-                                el.play().catch(() => {})
-                            }
-                            cameraPreviewRef.current = el
-                        }}
-                        autoPlay 
-                        muted 
-                        playsInline 
-                        className="h-full w-full object-cover opacity-90" 
-                     />
-                  ) : (
-                     <div className="flex h-full items-center justify-center text-[8px] text-slate-400">Off</div>
-                  )}
-                  {hasCameraStream && <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-red-500 border border-white animate-pulse shadow-sm" />}
-                  </div>
+                 {/* Camera preview disabled */}
 
                {/* Screen */}
               <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
