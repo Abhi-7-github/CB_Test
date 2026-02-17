@@ -12,6 +12,41 @@ function AdminQuestionList() {
     fetchQuestions()
   }, [])
 
+    const resolveCorrectIndex = (question) => {
+        if (!question || !Array.isArray(question.options)) return -1
+        const total = question.options.length
+        const raw = question.correctAnswer
+        if (raw === null || raw === undefined) return -1
+
+        if (typeof raw === 'number' && Number.isFinite(raw)) {
+            if (raw >= 0 && raw < total) return raw
+            if (raw >= 1 && raw <= total) return raw - 1
+            return -1
+        }
+
+        const text = String(raw).trim()
+        if (!text) return -1
+
+        if (/^[A-Za-z]$/.test(text)) {
+            const idx = text.toUpperCase().charCodeAt(0) - 65
+            return idx >= 0 && idx < total ? idx : -1
+        }
+
+        if (/^\d+$/.test(text)) {
+            const num = Number(text)
+            if (num >= 0 && num < total) return num
+            if (num >= 1 && num <= total) return num - 1
+            return -1
+        }
+
+        const exactIdx = question.options.indexOf(text)
+        if (exactIdx !== -1) return exactIdx
+
+        const lowered = text.toLowerCase()
+        const ciIdx = question.options.findIndex((opt) => String(opt).toLowerCase() === lowered)
+        return ciIdx
+    }
+
   const fetchQuestions = async () => {
     try {
       const response = await fetch(API_ENDPOINTS.questions)
@@ -117,19 +152,22 @@ function AdminQuestionList() {
                     {q.type === 'mcq' && (
                     <div className="bg-slate-50 rounded-md p-4 mb-3 border border-slate-100">
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {q.options.map((opt, idx) => (
-                            <li key={idx} className={`flex items-start gap-2 text-sm p-2 rounded ${
-                                idx === q.correctAnswer ? 'bg-green-50 text-green-700 border border-green-200 font-medium' : 'text-slate-600'
-                            }`}>
+                                                        {q.options.map((opt, idx) => {
+                                                            const correctIndex = resolveCorrectIndex(q)
+                                                            const isCorrect = idx === correctIndex
+                                                            return (
+                                                        <li key={idx} className={`flex items-start gap-2 text-sm p-2 rounded ${
+                                                                isCorrect ? 'bg-green-50 text-green-700 border border-green-200 font-medium' : 'text-slate-600'
+                                                        }`}>
                                 <span className={`flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-xs border ${
-                                     idx === q.correctAnswer ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300'
+                                                                         isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300'
                                 }`}>
                                     {String.fromCharCode(65 + idx)}
                                 </span>
                                 <span>{opt}</span>
-                                {idx === q.correctAnswer && <span className="ml-auto text-xs font-bold uppercase tracking-wider text-green-600">Correct</span>}
+                                                                {isCorrect && <span className="ml-auto text-xs font-bold uppercase tracking-wider text-green-600">Correct</span>}
                             </li>
-                            ))}
+                                                            )})}
                         </ul>
                     </div>
                     )}

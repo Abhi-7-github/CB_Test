@@ -35,6 +35,41 @@ function AdminQuestions() {
     fetchQuestions()
   }, [])
 
+  const resolveCorrectIndex = (question) => {
+    if (!question || !Array.isArray(question.options)) return ''
+    const total = question.options.length
+    const raw = question.correctAnswer
+    if (raw === null || raw === undefined) return ''
+
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+      if (raw >= 0 && raw < total) return String(raw)
+      if (raw >= 1 && raw <= total) return String(raw - 1)
+      return ''
+    }
+
+    const text = String(raw).trim()
+    if (!text) return ''
+
+    if (/^[A-Za-z]$/.test(text)) {
+      const idx = text.toUpperCase().charCodeAt(0) - 65
+      return idx >= 0 && idx < total ? String(idx) : ''
+    }
+
+    if (/^\d+$/.test(text)) {
+      const num = Number(text)
+      if (num >= 0 && num < total) return String(num)
+      if (num >= 1 && num <= total) return String(num - 1)
+      return ''
+    }
+
+    const exactIdx = question.options.indexOf(text)
+    if (exactIdx !== -1) return String(exactIdx)
+
+    const lowered = text.toLowerCase()
+    const ciIdx = question.options.findIndex((opt) => String(opt).toLowerCase() === lowered)
+    return ciIdx !== -1 ? String(ciIdx) : ''
+  }
+
   useEffect(() => {
     if (location.state?.question) {
         const q = location.state.question
@@ -45,7 +80,7 @@ function AdminQuestions() {
             type: q.type,
             text: q.text,
             options: q.type === 'mcq' ? (q.options.length ? q.options : ['']) : [''],
-            correctAnswer: q.type === 'mcq' ? q.correctAnswer : '',
+            correctAnswer: q.type === 'mcq' ? resolveCorrectIndex(q) : '',
             marks: q.marks?.toString() || '1',
             fileAccept: q.fileUpload?.accept?.join(', ') || '',
             fileMaxSizeMb: q.fileUpload?.maxSizeMb?.toString() || '5'

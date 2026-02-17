@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import AdminNavbar from '../components/AdminNavbar'
 import { API_ENDPOINTS } from '../api'
+import studentData from '../data/studentdata.json'
 
 function AdminStudentScore() {
   const [scores, setScores] = useState([])
@@ -27,22 +28,51 @@ function AdminStudentScore() {
     fetchScores()
   }, [])
 
-  const downloadCSV = () => {
-    if (scores.length === 0) return
+  const scoreMap = useMemo(() => {
+    const map = new Map()
+    scores.forEach((score) => {
+      if (score?.studentEmail) {
+        map.set(score.studentEmail, score)
+      }
+    })
+    return map
+  }, [scores])
 
+  const mergedRows = useMemo(() => {
+    return (studentData || []).map((student) => {
+      const email = student.email
+      const score = scoreMap.get(email)
+      return {
+        email,
+        score,
+      }
+    })
+  }, [scoreMap])
+
+  const formatPercentage = (score) => {
+    if (!score) return 'Not attempted'
+    return score.totalMarks > 0
+      ? `${((score.score / score.totalMarks) * 100).toFixed(1)}%`
+      : '0%'
+  }
+
+  const formatDate = (score) => {
+    if (!score) return 'Not attempted'
+    return new Date(score.updatedAt || score.createdAt).toLocaleString()
+  }
+
+  const downloadCSV = () => {
     const headers = ['Student Email', 'Score', 'Total Marks', 'Percentage', 'Date']
     const csvRows = [headers.join(',')]
 
-    scores.forEach(score => {
-      const percentage = score.totalMarks > 0 ? ((score.score / score.totalMarks) * 100).toFixed(1) + '%' : '0%'
-      const date = new Date(score.updatedAt || score.createdAt).toLocaleString()
-      
+    mergedRows.forEach((row) => {
+      const score = row.score
       const values = [
-        score.studentEmail,
-        score.score,
-        score.totalMarks,
-        percentage,
-        date
+        row.email,
+        score ? score.score : 'Not attempted',
+        score ? score.totalMarks : 'Not attempted',
+        formatPercentage(score),
+        formatDate(score),
       ]
 
       // Escape fields containing commas or quotes
@@ -78,9 +108,9 @@ function AdminStudentScore() {
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-xl font-semibold text-slate-900">Student Scores</h1>
             <button
-                onClick={downloadCSV}
-                disabled={scores.length === 0}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
+              onClick={downloadCSV}
+              disabled={mergedRows.length === 0}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50 disabled:cursor-not-allowed text-sm flex items-center gap-2"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Download CSV
@@ -109,33 +139,35 @@ function AdminStudentScore() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {scores.length === 0 && !loading && !error && (
+                {mergedRows.length === 0 && !loading && !error && (
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan="4">
-                      No scores available yet.
+                      No students available yet.
                     </td>
                   </tr>
                 )}
-                {scores.map((score) => (
-                  <tr key={score._id}>
+                {mergedRows.map((row) => (
+                  <tr key={row.email}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {score.studentEmail}
+                      {row.email}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {score.score} / {score.totalMarks}
+                      {row.score ? `${row.score.score} / ${row.score.totalMarks}` : 'Not attempted'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {score.totalMarks > 0 ? ((score.score / score.totalMarks) * 100).toFixed(1) + '%' : '0%'}
+                      {formatPercentage(row.score)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(score.updatedAt || score.createdAt).toLocaleString(undefined, {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                        second: '2-digit'
-                      })}
+                      {row.score
+                        ? new Date(row.score.updatedAt || row.score.createdAt).toLocaleString(undefined, {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                          })
+                        : 'Not attempted'}
                     </td>
                   </tr>
                 ))}
