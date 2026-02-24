@@ -25,6 +25,8 @@ function StudentQuestions() {
   const violationTimerRef = useRef(null)
   const screenPreviewRef = useRef(null)
   const [hasScreenStream, setHasScreenStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.screenStream))
+  const cameraPreviewRef = useRef(null)
+  const [hasCameraStream, setHasCameraStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.cameraStream))
 
   const [showFinishModal, setShowFinishModal] = useState(false)
   const [isTestActive, setIsTestActive] = useState(false)
@@ -82,7 +84,27 @@ function StudentQuestions() {
      }
   }, [])
 
-  // Camera tracking disabled.
+  // Camera tracking
+  useEffect(() => {
+    if (window.__proctoringStreams?.cameraStream) {
+      const stream = window.__proctoringStreams.cameraStream
+      const track = stream.getVideoTracks()[0]
+
+      const handleTrackEnded = () => {
+        if (hasStartedExamRef.current && !isSubmittedRef.current) {
+          handleViolation('Camera was stopped manually.')
+        }
+        setHasCameraStream(false)
+      }
+
+      if (track) {
+        track.addEventListener('ended', handleTrackEnded)
+        return () => {
+          track.removeEventListener('ended', handleTrackEnded)
+        }
+      }
+    }
+  }, [])
 
   // Check test status & Screen Share liveness
   useEffect(() => {
@@ -108,6 +130,18 @@ function StudentQuestions() {
           if (!isStreamActive) {
              handleViolation('Screen sharing was stopped or permission revoked.');
           }
+
+          // 3. Check if camera is still active
+          const cameraStream = window.__proctoringStreams?.cameraStream
+          const isCameraActive =
+            cameraStream &&
+            cameraStream.active &&
+            cameraStream.getVideoTracks().length > 0 &&
+            cameraStream.getVideoTracks()[0].readyState === 'live'
+
+          if (!isCameraActive) {
+            handleViolation('Camera was stopped or permission revoked.')
+          }
       }
     }
 
@@ -117,6 +151,12 @@ function StudentQuestions() {
     return () => {
       if (intervalId) clearInterval(intervalId)
     }
+  }, [])
+
+  useEffect(() => {
+    // Keep preview flags in sync if streams appear later
+    setHasScreenStream(!!window.__proctoringStreams?.screenStream)
+    setHasCameraStream(!!window.__proctoringStreams?.cameraStream)
   }, [])
 
   useEffect(() => {
@@ -542,7 +582,30 @@ function StudentQuestions() {
         <div className="p-4 border-b border-slate-100">
            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Monitoring</h2>
            <div className="grid grid-cols-2 gap-2">
-                 {/* Camera preview disabled */}
+              {/* Camera */}
+            <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
+               <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                <span className="text-[8px] font-bold text-white uppercase tracking-wider shadow-black drop-shadow-md">Cam</span>
+              </div>
+              {hasCameraStream ? (
+                <video
+                  ref={el => {
+                     if (el && window.__proctoringStreams?.cameraStream) {
+                      el.srcObject = window.__proctoringStreams.cameraStream
+                     }
+                     cameraPreviewRef.current = el
+                  }}
+                  autoPlay
+                  muted
+                  playsInline
+                  className="h-full w-full object-cover opacity-90"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center text-[8px] text-slate-400">Off</div>
+              )}
+              {hasCameraStream && <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-500 border border-white animate-pulse shadow-sm" />}
+            </div>
 
                {/* Screen */}
               <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">

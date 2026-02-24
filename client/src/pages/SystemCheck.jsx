@@ -6,7 +6,7 @@ function SystemCheck() {
   const navigate = useNavigate()
   
   // Initialize state from existing window streams if available (prevents double permission request on back nav)
-  // Camera is disabled for this flow.
+  const [cameraStream, setCameraStream] = useState(() => window.__proctoringStreams?.cameraStream || null)
   const [screenStream, setScreenStream] = useState(() => window.__proctoringStreams?.screenStream || null)
   
   const [isFullscreen, setIsFullscreen] = useState(false)
@@ -16,6 +16,7 @@ function SystemCheck() {
   const [isChrome, setIsChrome] = useState(true)
 
   const screenRef = useRef(null)
+  const cameraRef = useRef(null)
   const inputRefs = useRef([])
 
   useEffect(() => {
@@ -29,12 +30,44 @@ function SystemCheck() {
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     
     // Auto-attach existing streams to refs if they exist on mount
+    if (cameraStream && cameraRef.current) {
+      cameraRef.current.srcObject = cameraStream
+    }
     if (screenStream && screenRef.current) {
       screenRef.current.srcObject = screenStream
     }
 
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [screenStream]) // Dep on streams to ensure re-attach if they were init from window
+  }, [cameraStream, screenStream]) // Dep on streams to ensure re-attach if they were init from window
+
+  // Camera Access
+  const enableCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      setCameraStream(stream)
+      if (cameraRef.current) {
+        cameraRef.current.srcObject = stream
+      }
+
+      window.__proctoringStreams = {
+        ...window.__proctoringStreams,
+        cameraStream: stream,
+      }
+
+      const track = stream.getVideoTracks()[0]
+      if (track) {
+        track.onended = () => {
+          setCameraStream(null)
+          if (window.__proctoringStreams) window.__proctoringStreams.cameraStream = null
+        }
+      }
+
+      setError('')
+    } catch (err) {
+      console.error(err)
+      setError('Camera permission cancelled or failed.')
+    }
+  }
 
   useEffect(() => {
     const handleContextMenu = (event) => {
@@ -149,6 +182,10 @@ function SystemCheck() {
 
   // Validation & Start
   const startAssessment = async () => {
+    if (!cameraStream) {
+      setError('Please enable your camera.')
+      return
+    }
     if (!screenStream) {
       setError('Please share your entire screen.')
       return
@@ -195,7 +232,7 @@ function SystemCheck() {
     }
 
     // Ensure streams are saved (redundant but safe)
-    window.__proctoringStreams = { ...window.__proctoringStreams, screenStream }
+    window.__proctoringStreams = { ...window.__proctoringStreams, cameraStream, screenStream }
     localStorage.setItem('systemCheckPassed', 'true')
     navigate('/student')
   }
@@ -246,7 +283,7 @@ function SystemCheck() {
                         <li>You must share your <strong>entire screen</strong> when prompted. Sharing a window or tab is not allowed.</li>
                         <li>Ensure you have a stable internet connection.</li>
                         <li>Do not switch tabs or exit fullscreen mode.</li>
-                        {/* <li>Keep your camera and microphone on at all times.</li> */}
+                      <li>Keep your camera on at all times.</li>
                     </ul>
                 </div>
             </aside>
@@ -259,7 +296,25 @@ function SystemCheck() {
                 {/* Media Checks Grid */}
                 <div className="mb-8 grid gap-8 md:grid-cols-2">
                     
-                    {/* Camera Box (disabled) */}
+                  {/* Camera Box */}
+                  <div className="flex flex-col gap-4">
+                    <div className="relative flex aspect-video items-center justify-center rounded-lg bg-slate-800 text-slate-400 overflow-hidden">
+                      {cameraStream ? (
+                        <video ref={cameraRef} autoPlay muted playsInline className="h-full w-full object-cover" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-2">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                          <span>No Camera</span>
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      onClick={enableCamera}
+                      className={`w-full rounded-full py-3 font-semibold text-white transition-colors ${cameraStream ? 'bg-[#00C853] hover:bg-[#009624]' : 'bg-indigo-600 hover:bg-indigo-700'}`}
+                    >
+                      {cameraStream ? 'Camera Enabled' : 'Enable Camera'}
+                    </button>
+                  </div>
 
                     {/* Screen Share Box */}
                      <div className="flex flex-col gap-4">
