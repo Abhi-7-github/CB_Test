@@ -17,7 +17,7 @@ function StudentQuestions() {
   const [answers, setAnswers] = useState({})
   const [markedForReview, setMarkedForReview] = useState({})
   const [result, setResult] = useState(null)
-  const examDurationSeconds = 20 * 60
+  const examDurationSeconds = 60 * 60
   const [remainingSeconds, setRemainingSeconds] = useState(examDurationSeconds)
   const wasFullscreenRef = useRef(false)
   const autoSubmitTriggeredRef = useRef(false)
