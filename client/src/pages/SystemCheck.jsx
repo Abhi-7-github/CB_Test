@@ -1,22 +1,20 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { API_ENDPOINTS, API_BASE_URL } from '../api'
+import { API_ENDPOINTS } from '../api'
 
 function SystemCheck() {
   const navigate = useNavigate()
   
   // Initialize state from existing window streams if available (prevents double permission request on back nav)
-  const [cameraStream, setCameraStream] = useState(() => window.__proctoringStreams?.cameraStream || null)
   const [screenStream, setScreenStream] = useState(() => window.__proctoringStreams?.screenStream || null)
   
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [code, setCode] = useState(Array(6).fill(''))
   const [error, setError] = useState('')
   const [totalQuestions, setTotalQuestions] = useState(0)
-  const [isChrome, setIsChrome] = useState(true)
+  const [_isChrome, setIsChrome] = useState(true)
 
   const screenRef = useRef(null)
-  const cameraRef = useRef(null)
   const inputRefs = useRef([])
 
   useEffect(() => {
@@ -24,50 +22,28 @@ function SystemCheck() {
     const isChromeCheck = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
     setIsChrome(isChromeCheck);
 
+    // Camera is intentionally disabled; stop/clear any previous session stream.
+    if (window.__proctoringStreams?.cameraStream) {
+      try {
+        window.__proctoringStreams.cameraStream.getTracks().forEach((t) => t.stop())
+      } catch {
+        // ignore
+      }
+      window.__proctoringStreams.cameraStream = null
+    }
+
     const handleFullscreenChange = () => {
       setIsFullscreen(!!document.fullscreenElement)
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     
     // Auto-attach existing streams to refs if they exist on mount
-    if (cameraStream && cameraRef.current) {
-      cameraRef.current.srcObject = cameraStream
-    }
     if (screenStream && screenRef.current) {
       screenRef.current.srcObject = screenStream
     }
 
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
-  }, [cameraStream, screenStream]) // Dep on streams to ensure re-attach if they were init from window
-
-  // Camera Access
-  const enableCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      setCameraStream(stream)
-      if (cameraRef.current) {
-        cameraRef.current.srcObject = stream
-      }
-
-      window.__proctoringStreams = {
-        ...window.__proctoringStreams,
-        cameraStream: stream,
-      }
-
-      const track = stream.getVideoTracks()[0]
-      if (track) {
-        track.onended = () => {
-          setCameraStream(null)
-          if (window.__proctoringStreams) window.__proctoringStreams.cameraStream = null
-        }
-      }
-
-      setError('')
-    } catch (err) {
-      console.error(err)
-      setError('Camera permission cancelled or failed.')
-    }
-  }
+  }, [screenStream]) // Dep on streams to ensure re-attach if they were init from window
 
   useEffect(() => {
     const handleContextMenu = (event) => {
@@ -105,7 +81,7 @@ function SystemCheck() {
         if (!response.ok) throw new Error('Failed to load questions')
         const data = await response.json()
         if (!ignore) setTotalQuestions(Array.isArray(data) ? data.length : 0)
-      } catch (err) {
+      } catch {
         if (!ignore) setTotalQuestions(0)
       }
     }
@@ -182,10 +158,6 @@ function SystemCheck() {
 
   // Validation & Start
   const startAssessment = async () => {
-    if (!cameraStream) {
-      setError('Please enable your camera.')
-      return
-    }
     if (!screenStream) {
       setError('Please share your entire screen.')
       return
@@ -232,7 +204,7 @@ function SystemCheck() {
     }
 
     // Ensure streams are saved (redundant but safe)
-    window.__proctoringStreams = { ...window.__proctoringStreams, cameraStream, screenStream }
+    window.__proctoringStreams = { ...window.__proctoringStreams, screenStream }
     localStorage.setItem('systemCheckPassed', 'true')
     navigate('/student')
   }
@@ -283,7 +255,6 @@ function SystemCheck() {
                         <li>You must share your <strong>entire screen</strong> when prompted. Sharing a window or tab is not allowed.</li>
                         <li>Ensure you have a stable internet connection.</li>
                         <li>Do not switch tabs or exit fullscreen mode.</li>
-                      <li>Keep your camera on at all times.</li>
                     </ul>
                 </div>
             </aside>
@@ -293,31 +264,10 @@ function SystemCheck() {
                 <h2 className="mb-2 text-2xl font-bold text-slate-800">System Check</h2>
                 <p className="mb-8 text-slate-500">Enable access to screen sharing</p>
                 
-                {/* Media Checks Grid */}
-                <div className="mb-8 grid gap-8 md:grid-cols-2">
-                    
-                  {/* Camera Box */}
-                  <div className="flex flex-col gap-4">
-                    <div className="relative flex aspect-video items-center justify-center rounded-lg bg-slate-800 text-slate-400 overflow-hidden">
-                      {cameraStream ? (
-                        <video ref={cameraRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-                      ) : (
-                        <div className="flex flex-col items-center gap-2">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
-                          <span>No Camera</span>
-                        </div>
-                      )}
-                    </div>
-                    <button
-                      onClick={enableCamera}
-                      className={`w-full rounded-full py-3 font-semibold text-white transition-colors ${cameraStream ? 'bg-[#00C853] hover:bg-[#009624]' : 'bg-indigo-600 hover:bg-indigo-700'}`}
-                    >
-                      {cameraStream ? 'Camera Enabled' : 'Enable Camera'}
-                    </button>
-                  </div>
-
+                {/* Media Checks */}
+                <div className="mb-8 grid gap-8 md:grid-cols-1">
                     {/* Screen Share Box */}
-                     <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-4">
                         <div className="relative flex aspect-video items-center justify-center rounded-lg bg-slate-800 text-slate-400 overflow-hidden">
                               {screenStream ? (
                                 <video ref={screenRef} autoPlay muted playsInline className="h-full w-full object-cover" />
