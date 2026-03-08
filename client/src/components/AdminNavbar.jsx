@@ -15,16 +15,25 @@ export default function AdminNavbar() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(API_ENDPOINTS.testStatus, { cache: 'no-store' })
-      .then(res => res.json())
-      .then(data => {
+    const fetchStatus = async () => {
+      try {
+        const res = await fetch(API_ENDPOINTS.testStatus, { cache: 'no-store' })
+        if (!res.ok) {
+          throw new Error(`Status fetch failed with ${res.status}`)
+        }
+        const data = await res.json()
+        if (typeof data.isTestActive !== 'boolean') {
+          throw new Error('Invalid status payload from server')
+        }
         setIsTestActive(data.isTestActive)
-        setLoading(false)
-      })
-      .catch(err => {
+      } catch (err) {
         console.error('Failed to fetch test status', err)
+      } finally {
         setLoading(false)
-      })
+      }
+    }
+
+    fetchStatus()
   }, [])
 
   const toggleTestStatus = async () => {
@@ -35,11 +44,18 @@ export default function AdminNavbar() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isTestActive: !isTestActive })
       })
+      if (!res.ok) {
+        const serverError = await res.json().catch(() => ({}))
+        throw new Error(serverError.message || `Status update failed with ${res.status}`)
+      }
       const data = await res.json()
+      if (typeof data.isTestActive !== 'boolean') {
+        throw new Error('Invalid status payload from server')
+      }
       setIsTestActive(data.isTestActive)
     } catch (err) {
       console.error('Failed to update test status', err)
-      alert('Failed to update status')
+      alert(`Failed to update status: ${err.message}`)
     } finally {
       setLoading(false)
     }

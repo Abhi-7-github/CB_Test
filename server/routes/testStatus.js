@@ -8,11 +8,18 @@ router.get('/', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   console.log('Test status requested');
   try {
-    let status = await TestStatus.findOne();
-    if (!status) {
-      status = await TestStatus.create({ isTestActive: false });
-    }
-    res.json(status);
+    const status = await TestStatus.findOneAndUpdate(
+      {},
+      { $setOnInsert: { isTestActive: false } },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+        sort: { createdAt: 1 },
+      }
+    ).lean();
+
+    res.json({ isTestActive: Boolean(status?.isTestActive) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -26,14 +33,18 @@ router.post('/', async (req, res) => {
   }
 
   try {
-    let status = await TestStatus.findOne();
-    if (!status) {
-      status = await TestStatus.create({ isTestActive });
-    } else {
-      status.isTestActive = isTestActive;
-      await status.save();
-    }
-    res.json(status);
+    const status = await TestStatus.findOneAndUpdate(
+      {},
+      { $set: { isTestActive } },
+      {
+        new: true,
+        upsert: true,
+        setDefaultsOnInsert: true,
+        sort: { createdAt: 1 },
+      }
+    ).lean();
+
+    res.json({ isTestActive: Boolean(status?.isTestActive) });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

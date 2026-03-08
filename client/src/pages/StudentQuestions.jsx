@@ -16,7 +16,7 @@ function StudentQuestions() {
   const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' })
   const [answers, setAnswers] = useState({})
   const [markedForReview, setMarkedForReview] = useState({})
-  const examDurationSeconds = 20 * 60
+  const examDurationSeconds = 30 * 60
   const [remainingSeconds, setRemainingSeconds] = useState(examDurationSeconds)
   const autoSubmitTriggeredRef = useRef(false)
   const screenPreviewRef = useRef(null)
@@ -98,11 +98,19 @@ function StudentQuestions() {
       // 1. Check if test was stopped by admin
       try {
         const res = await fetch(API_ENDPOINTS.testStatus, { cache: 'no-store' })
+        if (!res.ok) {
+          throw new Error(`Status check failed with ${res.status}`)
+        }
         const data = await res.json()
+        if (typeof data.isTestActive !== 'boolean') {
+          throw new Error('Invalid status payload from server')
+        }
         setIsTestActive(data.isTestActive)
-        setStatusChecked(true)
       } catch (err) {
         console.error('Failed to check status', err)
+        setError('Unable to verify test status. Please check your connection and refresh.')
+      } finally {
+        setStatusChecked(true)
       }
 
       // 2. Check if screen share is still active (Only if exam started)
