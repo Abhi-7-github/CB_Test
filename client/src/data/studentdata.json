@@ -1,607 +1,470 @@
 [
-  {
-    "email": "99230040854@klu.ac.in",
-    "password": "99230040854"
-  },
-  {
-    "email": "99230040276@klu.ac.in",
-    "password": "99230040276"
-  },
-  {
-    "email": "99230040895@klu.ac.in",
-    "password": "99230040895"
-  },
-  {
-    "email": "99230040583@klu.ac.in",
-    "password": "99230040583"
-  },
-  {
-    "email": "9922005353@klu.ac.in",
-    "password": "9922005353"
-  },
-  {
-    "email": "99230040624@klu.ac.in",
-    "password": "99230040624"
-  },
-  {
-    "email": "9923008030@klu.ac.in",
-    "password": "9923008030"
-  },
-  {
-    "email": "99220041316@klu.ac.in",
-    "password": "99220041316"
-  },
-  {
-    "email": "99230040098@klu.ac.in",
-    "password": "99230040098"
-  },
-  {
-    "email": "99230040715@klu.ac.in",
-    "password": "99230040715"
-  },
-  {
-    "email": "9923008159@klu.ac.in",
-    "password": "9923008159"
-  },
-  {
-    "email": "9923005118@klu.ac.in",
-    "password": "9923005118"
-  },
-  {
-    "email": "99230040479@klu.ac.in",
-    "password": "99230040479"
-  },
-  {
-    "email": "9923005214@klu.ac.in",
-    "password": "9923005214"
-  },
-  {
-    "email": "9923005111@klu.ac.in",
-    "password": "9923005111"
-  },
-  {
-    "email": "99220040181@klu.ac.in",
-    "password": "99220040181"
-  },
-  {
-    "email": "99220040423@klu.ac.in",
-    "password": "99220040423"
-  },
-  {
-    "email": "9923037006@klu.ac.in",
-    "password": "9923037006"
-  },
-  {
-    "email": "99240040243@klu.ac.in",
-    "password": "99240040243"
-  },
-  {
-    "email": "9922005325@klu.ac.in",
-    "password": "9922005325"
-  },
-  {
-    "email": "99230040441@klu.ac.in",
-    "password": "99230040441"
-  },
-  {
-    "email": "99220041334@klu.ac.in",
-    "password": "99220041334"
-  },
-  {
-    "email": "9923005093@klu.ac.in",
-    "password": "9923005093"
-  },
-  {
-    "email": "99230040138@klu.ac.in",
-    "password": "99230040138"
-  },
-  {
-    "email": "9924051005@klu.ac.in",
-    "password": "9924051005"
-  },
-  {
-    "email": "99230040644@klu.ac.in",
-    "password": "99230040644"
-  },
-  {
-    "email": "99230040461@klu.ac.in",
-    "password": "99230040461"
-  },
-  {
-    "email": "99230040982@klu.ac.in",
-    "password": "99230040982"
-  },
-  {
-    "email": "9922008308@klu.ac.in",
-    "password": "9922008308"
-  },
-  {
-    "email": "9922005107@klu.ac.in",
-    "password": "9922005107"
-  },
-  {
-    "email": "99230041203@klu.ac.in",
-    "password": "99230041203"
-  },
-  {
-    "email": "99240041354@klu.ac.in",
-    "password": "99240041354"
-  },
-  {
-    "email": "99230040770@klu.ac.in",
-    "password": "99230040770"
-  },
-  {
-    "email": "9922008339@klu.ac.in",
-    "password": "9922008339"
-  },
-  {
-    "email": "9824037021@klu.ac.in",
-    "password": "9824037021"
-  },
-  {
-    "email": "9922005167@klu.ac.in",
-    "password": "9922005167"
-  },
-  {
-    "email": "99230040397@klu.ac.in",
-    "password": "99230040397"
-  },
-  {
-    "email": "99220040549@klu.ac.in",
-    "password": "99220040549"
-  },
-  {
-    "email": "9923005256@klu.ac.in",
-    "password": "9923005256"
-  },
-  {
-    "email": "9923008070@klu.ac.in",
-    "password": "9923008070"
-  },
-  {
-    "email": "9923005244@klu.ac.in",
-    "password": "9923005244"
-  },
-  {
-    "email": "9923008078@klu.ac.in",
-    "password": "9923008078"
-  },
-  {
-    "email": "99230040603@klu.ac.in",
-    "password": "99230040603"
-  },
-  {
-    "email": "9923005099@klu.ac.in",
-    "password": "9923005099"
-  },
-  {
-    "email": "99230040855@klu.ac.in",
-    "password": "99230040855"
-  },
-  {
-    "email": "9824037014@klu.ac.in",
-    "password": "9824037014"
-  },
-  {
-    "email": "9922005079@klu.ac.in",
-    "password": "9922005079"
-  },
-  {
-    "email": "99240041305@klu.ac.in",
-    "password": "99240041305"
-  },
-  {
-    "email": "99220041384@klu.ac.in",
-    "password": "99220041384"
-  },
-  {
-    "email": "99240041355@klu.ac.in",
-    "password": "99240041355"
-  },
-  {
-    "email": "9923005079@klu.ac.in",
-    "password": "9923005079"
-  },
-  {
-    "email": "9825037005@klu.ac.in",
-    "password": "9825037005"
-  },
-  {
-    "email": "99230040627@klu.ac.in",
-    "password": "99230040627"
-  },
-  {
-    "email": "9823005024@klu.ac.in",
-    "password": "9823005024"
-  },
-  {
-    "email": "9923005297@klu.ac.in",
-    "password": "9923005297"
-  },
-  {
-    "email": "9922005072@klu.ac.in",
-    "password": "9922005072"
-  },
-  {
-    "email": "9922008039@klu.ac.in",
-    "password": "9922008039"
-  },
-  {
-    "email": "99220041706@klu.ac.in",
-    "password": "99220041706"
-  },
-  {
-    "email": "99220041120@klu.ac.in",
-    "password": "99220041120"
-  },
-  {
-    "email": "9923005153@klu.ac.in",
-    "password": "9923005153"
-  },
-  {
-    "email": "99220041010@klu.ac.in",
-    "password": "99220041010"
-  },
-  {
-    "email": "9922006028@klu.ac.in",
-    "password": "9922006028"
-  },
-  {
-    "email": "99230040621@klu.ac.in",
-    "password": "99230040621"
-  },
-  {
-    "email": "9922005162@klu.ac.in",
-    "password": "9922005162"
-  },
-  {
-    "email": "99240040296@klu.ac.in",
-    "password": "99240040296"
-  },
-  {
-    "email": "99220041624@klu.ac.in",
-    "password": "99220041624"
-  },
-  {
-    "email": "9825037001@klu.ac.in",
-    "password": "9825037001"
-  },
-  {
-    "email": "99220040479@klu.ac.in",
-    "password": "99220040479"
-  },
-  {
-    "email": "99230040884@klu.ac.in",
-    "password": "99230040884"
-  },
-  {
-    "email": "9823005009@klu.ac.in",
-    "password": "9823005009"
-  },
-  {
-    "email": "99240040244@klu.ac.in",
-    "password": "99240040244"
-  },
-  {
-    "email": "9922008122@klu.ac.in",
-    "password": "9922008122"
-  },
-  {
-    "email": "99220040744@klu.ac.in",
-    "password": "99220040744"
-  },
-  {
-    "email": "9823005021@klu.ac.in",
-    "password": "9823005021"
-  },
-  {
-    "email": "99220041020@klu.ac.in",
-    "password": "99220041020"
-  },
-  {
-    "email": "99230040285@klu.ac.in",
-    "password": "99230040285"
-  },
-  {
-    "email": "9922008324@klu.ac.in",
-    "password": "9922008324"
-  },
-  {
-    "email": "99220041629@klu.ac.in",
-    "password": "99220041629"
-  },
-  {
-    "email": "99230040399@klu.ac.in",
-    "password": "99230040399"
-  },
-  {
-    "email": "9922008388@klu.ac.in",
-    "password": "9922008388"
-  },
-  {
-    "email": "99230040986@klu.ac.in",
-    "password": "99230040986"
-  },
-  {
-    "email": "9923008067@klu.ac.in",
-    "password": "9923008067"
-  },
-  {
-    "email": "9923008041@klu.ac.in",
-    "password": "9923008041"
-  },
-  {
-    "email": "9923005154@klu.ac.in",
-    "password": "9923005154"
-  },
-  {
-    "email": "99230040117@klu.ac.in",
-    "password": "99230040117"
-  },
-  {
-    "email": "99220040386@klu.ac.in",
-    "password": "99220040386"
-  },
-  {
-    "email": "99220040315@klu.ac.in",
-    "password": "99220040315"
-  },
-  {
-    "email": "99230040904@klu.ac.in",
-    "password": "99230040904"
-  },
-  {
-    "email": "9922005269@klu.ac.in",
-    "password": "9922005269"
-  },
-  {
-    "email": "99230041263@klu.ac.in",
-    "password": "99230041263"
-  },
-  {
-    "email": "9824037007@klu.ac.in",
-    "password": "9824037007"
-  },
-  {
-    "email": "9923005090@klu.ac.in",
-    "password": "9923005090"
-  },
-  {
-    "email": "99230040930@klu.ac.in",
-    "password": "99230040930"
-  },
-  {
-    "email": "9922005036@klu.ac.in",
-    "password": "9922005036"
-  },
-  {
-    "email": "99220041172@klu.ac.in",
-    "password": "99220041172"
-  },
-  {
-    "email": "99220041188@klu.ac.in",
-    "password": "99220041188"
-  },
-  {
-    "email": "9922008336@klu.ac.in",
-    "password": "9922008336"
-  },
-  {
-    "email": "99230040643@klu.ac.in",
-    "password": "99230040643"
-  },
-  {
-    "email": "9922005255@klu.ac.in",
-    "password": "9922005255"
-  },
-  {
-    "email": "9923017047@klu.ac.in",
-    "password": "9923017047"
-  },
-  {
-    "email": "99220041968@klu.ac.in",
-    "password": "99220041968"
-  },
-  {
-    "email": "9924005099@klu.ac.in",
-    "password": "9924005099"
-  },
-  {
-    "email": "9923037001@klu.ac.in",
-    "password": "9923037001"
-  },
-  {
-    "email": "99230040641@klu.ac.in",
-    "password": "99230040641"
-  },
-  {
-    "email": "99230040553@klu.ac.in",
-    "password": "99230040553"
-  },
-  {
-    "email": "99230040819@klu.ac.in",
-    "password": "99230040819"
-  },
-  {
-    "email": "99220041638@klu.ac.in",
-    "password": "99220041638"
-  },
-  {
-    "email": "9922008364@klu.ac.in",
-    "password": "9922008364"
-  },
-  {
-    "email": "99230040829@klu.ac.in",
-    "password": "99230040829"
-  },
-  {
-    "email": "9823005025@klu.ac.in",
-    "password": "9823005025"
-  },
-  {
-    "email": "9923037004@klu.ac.in",
-    "password": "9923037004"
-  },
-  {
-    "email": "9824037024@klu.ac.in",
-    "password": "9824037024"
-  },
-  {
-    "email": "9823037007@klu.ac.in",
-    "password": "9823037007"
-  },
-  {
-    "email": "9823037001@klu.ac.in",
-    "password": "9823037001"
-  },
-  {
-    "email": "99220040960@klu.ac.in",
-    "password": "99220040960"
-  },
-  {
-    "email": "9823037016@klu.ac.in",
-    "password": "9823037016"
-  },
-  {
-    "email": "9922005206@klu.ac.in",
-    "password": "9922005206"
-  },
-  {
-    "email": "99220041021@klu.ac.in",
-    "password": "99220041021"
-  },
-  {
-    "email": "9922008227@klu.ac.in",
-    "password": "9922008227"
-  },
-  {
-    "email": "9923008061@klu.ac.in",
-    "password": "9923008061"
-  },
-  {
-    "email": "9922008173@klu.ac.in",
-    "password": "9922008173"
-  },
-  {
-    "email": "9824037003@klu.ac.in",
-    "password": "9824037003"
-  },
-  {
-    "email": "9823037013@klu.ac.in",
-    "password": "9823037013"
-  },
-  {
-    "email": "99230041088@klu.ac.in",
-    "password": "99230041088"
-  },
-  {
-    "email": "9825037011@klu.ac.in",
-    "password": "9825037011"
-  },
-  {
-    "email": "99230040977@klu.ac.in",
-    "password": "99230040977"
-  },
-  {
-    "email": "9923005212@klu.ac.in",
-    "password": "9923005212"
-  },
-  {
-    "email": "99220040391@klu.ac.in",
-    "password": "99220040391"
-  },
-  {
-    "email": "9825037010@klu.ac.in",
-    "password": "9825037010"
-  },
-  {
-    "email": "9825037008@klu.ac.in",
-    "password": "9825037008"
-  },
-  {
-    "email": "9824037019@klu.ac.in",
-    "password": "9824037019"
-  },
-  {
-    "email": "9922008178@klu.ac.in",
-    "password": "9922008178"
-  },
-  {
-    "email": "99230040965@klu.ac.in",
-    "password": "99230040965"
-  },
-  {
-    "email": "99230040944@klu.ac.in",
-    "password": "99230040944"
-  },
-  {
-    "email": "9824037005@klu.ac.in",
-    "password": "9824037005"
-  },
-  {
-    "email": "99230040119@klu.ac.in",
-    "password": "99230040119"
-  },
-  {
-    "email": "99240041250@klu.ac.in",
-    "password": "99240041250"
-  },
-  {
-    "email": "9923008081@klu.ac.in",
-    "password": "9923008081"
-  },
-  {
-    "email": "99230040952@klu.ac.in",
-    
-    "password": "99230040952"
-  },
-  {
-    "email": "9823037004@klu.ac.in",
-    "password": "9823037004"
-  },
-  {
-    "email": "9922005257@klu.ac.in",
-    "password": "9922005257"
-  },
-  {
-    "email": "99220041307@klu.ac.in",
-    "password": "99220041307"
-  },
-  {
-    "email": "99220042093@klu.ac.in",
-    "password": "99220042093"
-  },
-  {
-    "email": "99220041800@klu.ac.in",
-    "password": "99220041800"
-  },
-  {
-    "email": "9922005246@klu.ac.in",
-    "password": "9922005246"
-  },
-  {
-    "email": "9921008022@klu.ac.in",
-    "password": "9921008022"
-  },
-  {
-    "email": "9921008039@klu.ac.in",
-    "password": "9921008039"
-  },
-  {
-    "email": "99220041200@klu.ac.in",
-    "password": "99220041200"
-  },
-  {
-    "email": "99230040635@klu.ac.in",
-    "password": "99230040635"
-  },
-  {
-    "email": "9922008304@klu.ac.in",
-    "password": "9922008304"
-  },
-  {
-    "email": "9923008038@klu.ac.in",
-    "password": "9923008038"
-  }
+    {
+        "email":  "9823037018@klu.ac.in",
+        "password":  "9823037018"
+    },
+    {
+        "email":  "9823037006@klu.ac.in",
+        "password":  "9823037006"
+    },
+    {
+        "email":  "99240040822@klu.ac.in",
+        "password":  "99240040822"
+    },
+    {
+        "email":  "99240040887@klu.ac.in",
+        "password":  "99240040887"
+    },
+    {
+        "email":  "99240040902@klu.ac.in",
+        "password":  "99240040902"
+    },
+    {
+        "email":  "99240040937@klu.ac.in",
+        "password":  "99240040937"
+    },
+    {
+        "email":  "99230040871@klu.ac.in",
+        "password":  "99230040871"
+    },
+    {
+        "email":  "99230040392@klu.ac.in",
+        "password":  "99230040392"
+    },
+    {
+        "email":  "9823037003@klu.ac.in",
+        "password":  "9823037003"
+    },
+    {
+        "email":  "9824037013@klu.ac.in",
+        "password":  "9824037013"
+    },
+    {
+        "email":  "99230040463@klu.ac.in",
+        "password":  "99230040463"
+    },
+    {
+        "email":  "99230040455@klu.ac.in",
+        "password":  "99230040455"
+    },
+    {
+        "email":  "9825037002@klu.ac.in",
+        "password":  "9825037002"
+    },
+    {
+        "email":  "9923037002@klu.ac.in",
+        "password":  "9923037002"
+    },
+    {
+        "email":  "99230040032@klu.ac.in",
+        "password":  "99230040032"
+    },
+    {
+        "email":  "99230040575@klu.ac.in",
+        "password":  "99230040575"
+    },
+    {
+        "email":  "99230040573@klu.ac.in",
+        "password":  "99230040573"
+    },
+    {
+        "email":  "99230040949@klu.ac.in",
+        "password":  "99230040949"
+    },
+    {
+        "email":  "99230040011@klu.ac.in",
+        "password":  "99230040011"
+    },
+    {
+        "email":  "99230041079@klu.ac.in",
+        "password":  "99230041079"
+    },
+    {
+        "email":  "99230040676@klu.ac.in",
+        "password":  "99230040676"
+    },
+    {
+        "email":  "99220041726@klu.ac.in",
+        "password":  "99220041726"
+    },
+    {
+        "email":  "99230041236@klu.ac.in",
+        "password":  "99230041236"
+    },
+    {
+        "email":  "99230040926@klu.ac.in",
+        "password":  "99230040926"
+    },
+    {
+        "email":  "99230040273@klu.ac.in",
+        "password":  "99230040273"
+    },
+    {
+        "email":  "99230040324@klu.ac.in",
+        "password":  "99230040324"
+    },
+    {
+        "email":  "99220040630@klu.ac.in",
+        "password":  "99220040630"
+    },
+    {
+        "email":  "99220040463@klu.ac.in",
+        "password":  "99220040463"
+    },
+    {
+        "email":  "99230041209@klu.ac.in",
+        "password":  "99230041209"
+    },
+    {
+        "email":  "99230041213@klu.ac.in",
+        "password":  "99230041213"
+    },
+    {
+        "email":  "99230040898@klu.ac.in",
+        "password":  "99230040898"
+    },
+    {
+        "email":  "99230040899@klu.ac.in",
+        "password":  "99230040899"
+    },
+    {
+        "email":  "99230041005@klu.ac.in",
+        "password":  "99230041005"
+    },
+    {
+        "email":  "99230040109@klu.ac.in",
+        "password":  "99230040109"
+    },
+    {
+        "email":  "99230040976@klu.ac.in",
+        "password":  "99230040976"
+    },
+    {
+        "email":  "99240040762@klu.ac.in",
+        "password":  "99240040762"
+    },
+    {
+        "email":  "99230040372@klu.ac.in",
+        "password":  "99230040372"
+    },
+    {
+        "email":  "9823037002@klu.ac.in",
+        "password":  "9823037002"
+    },
+    {
+        "email":  "99230040275@klu.ac.in",
+        "password":  "99230040275"
+    },
+    {
+        "email":  "99240040177@klu.ac.in",
+        "password":  "99240040177"
+    },
+    {
+        "email":  "99230040945@klu.ac.in",
+        "password":  "99230040945"
+    },
+    {
+        "email":  "99230040334@klu.ac.in",
+        "password":  "99230040334"
+    },
+    {
+        "email":  "99230040062@klu.ac.in",
+        "password":  "99230040062"
+    },
+    {
+        "email":  "99230040857@klu.ac.in",
+        "password":  "99230040857"
+    },
+    {
+        "email":  "99230040645@klu.ac.in",
+        "password":  "99230040645"
+    },
+    {
+        "email":  "9922037011@klu.ac.in",
+        "password":  "9922037011"
+    },
+    {
+        "email":  "99230040598@klu.ac.in",
+        "password":  "99230040598"
+    },
+    {
+        "email":  "99220040417@klu.ac.in",
+        "password":  "99220040417"
+    },
+    {
+        "email":  "99220042133@klu.ac.in",
+        "password":  "99220042133"
+    },
+    {
+        "email":  "99220042111@klu.ac.in",
+        "password":  "99220042111"
+    },
+    {
+        "email":  "99220041885@klu.ac.in",
+        "password":  "99220041885"
+    },
+    {
+        "email":  "99220041804@klu.ac.in",
+        "password":  "99220041804"
+    },
+    {
+        "email":  "9823037005@klu.ac.in",
+        "password":  "9823037005"
+    },
+    {
+        "email":  "99220041846@klu.ac.in",
+        "password":  "99220041846"
+    },
+    {
+        "email":  "99230040924@klu.ac.in",
+        "password":  "99230040924"
+    },
+    {
+        "email":  "99230040730@klu.ac.in",
+        "password":  "99230040730"
+    },
+    {
+        "email":  "99230040055@klu.ac.in",
+        "password":  "99230040055"
+    },
+    {
+        "email":  "99230040696@klu.ac.in",
+        "password":  "99230040696"
+    },
+    {
+        "email":  "99230040604@klu.ac.in",
+        "password":  "99230040604"
+    },
+    {
+        "email":  "99240040193@klu.ac.in",
+        "password":  "99240040193"
+    },
+    {
+        "email":  "99240040808@klu.ac.in",
+        "password":  "99240040808"
+    },
+    {
+        "email":  "99230041246@klu.ac.in",
+        "password":  "99230041246"
+    },
+    {
+        "email":  "99230041017@klu.ac.in",
+        "password":  "99230041017"
+    },
+    {
+        "email":  "99230041014@klu.ac.in",
+        "password":  "99230041014"
+    },
+    {
+        "email":  "9924051018@klu.ac.in",
+        "password":  "9924051018"
+    },
+    {
+        "email":  "99230040778@klu.ac.in",
+        "password":  "99230040778"
+    },
+    {
+        "email":  "99230040780@klu.ac.in",
+        "password":  "99230040780"
+    },
+    {
+        "email":  "99230040373@klu.ac.in",
+        "password":  "99230040373"
+    },
+    {
+        "email":  "9823037011@klu.ac.in",
+        "password":  "9823037011"
+    },
+    {
+        "email":  "9823037015@klu.ac.in",
+        "password":  "9823037015"
+    },
+    {
+        "email":  "99230040655@klu.ac.in",
+        "password":  "99230040655"
+    },
+    {
+        "email":  "9922008245@klu.ac.in",
+        "password":  "9922008245"
+    },
+    {
+        "email":  "9924008116@klu.ac.in",
+        "password":  "9924008116"
+    },
+    {
+        "email":  "9923008161@klu.ac.in",
+        "password":  "9923008161"
+    },
+    {
+        "email":  "9922008034@klu.ac.in",
+        "password":  "9922008034"
+    },
+    {
+        "email":  "9923008023@klu.ac.in",
+        "password":  "9923008023"
+    },
+    {
+        "email":  "9922008027@klu.ac.in",
+        "password":  "9922008027"
+    },
+    {
+        "email":  "9922008455@klu.ac.in",
+        "password":  "9922008455"
+    },
+    {
+        "email":  "9922008062@klu.ac.in",
+        "password":  "9922008062"
+    },
+    {
+        "email":  "9922008399@klu.ac.in",
+        "password":  "9922008399"
+    },
+    {
+        "email":  "9922008395@klu.ac.in",
+        "password":  "9922008395"
+    },
+    {
+        "email":  "9922008440@klu.ac.in",
+        "password":  "9922008440"
+    },
+    {
+        "email":  "9923008101@klu.ac.in",
+        "password":  "9923008101"
+    },
+    {
+        "email":  "9923008091@klu.ac.in",
+        "password":  "9923008091"
+    },
+    {
+        "email":  "9923008094@klu.ac.in",
+        "password":  "9923008094"
+    },
+    {
+        "email":  "9923008105@klu.ac.in",
+        "password":  "9923008105"
+    },
+    {
+        "email":  "9923008154@klu.ac.in",
+        "password":  "9923008154"
+    },
+    {
+        "email":  "9924008137@klu.ac.in",
+        "password":  "9924008137"
+    },
+    {
+        "email":  "9923001063@klu.ac.in",
+        "password":  "9923001063"
+    },
+    {
+        "email":  "9923001047@klu.ac.in",
+        "password":  "9923001047"
+    },
+    {
+        "email":  "9923001064@klu.ac.in",
+        "password":  "9923001064"
+    },
+    {
+        "email":  "9923001051@klu.ac.in",
+        "password":  "9923001051"
+    },
+    {
+        "email":  "9923001045@klu.ac.in",
+        "password":  "9923001045"
+    },
+    {
+        "email":  "9924011053@klu.ac.in",
+        "password":  "9924011053"
+    },
+    {
+        "email":  "9924011022@klu.ac.in",
+        "password":  "9924011022"
+    },
+    {
+        "email":  "9924001036@klu.ac.in",
+        "password":  "9924001036"
+    },
+    {
+        "email":  "9923001005@klu.ac.in",
+        "password":  "9923001005"
+    },
+    {
+        "email":  "9524009301@klu.ac.in",
+        "password":  "9524009301"
+    },
+    {
+        "email":  "9923001004@klu.ac.in",
+        "password":  "9923001004"
+    },
+    {
+        "email":  "9923001001@klu.ac.in",
+        "password":  "9923001001"
+    },
+    {
+        "email":  "9923005312@klu.ac.in",
+        "password":  "9923005312"
+    },
+    {
+        "email":  "9923005156@klu.ac.in",
+        "password":  "9923005156"
+    },
+    {
+        "email":  "9923005011@klu.ac.in",
+        "password":  "9923005011"
+    },
+    {
+        "email":  "9923005251@klu.ac.in",
+        "password":  "9923005251"
+    },
+    {
+        "email":  "9924005205@klu.ac.in",
+        "password":  "9924005205"
+    },
+    {
+        "email":  "9924005202@klu.ac.in",
+        "password":  "9924005202"
+    },
+    {
+        "email":  "9922005355@klu.ac.in",
+        "password":  "9922005355"
+    },
+    {
+        "email":  "9922005318@klu.ac.in",
+        "password":  "9922005318"
+    },
+    {
+        "email":  "9923005184@klu.ac.in",
+        "password":  "9923005184"
+    },
+    {
+        "email":  "9923005205@klu.ac.in",
+        "password":  "9923005205"
+    },
+    {
+        "email":  "9923005212@klu.ac.in",
+        "password":  "9923005212"
+    },
+    {
+        "email":  "9923005203@klu.ac.in",
+        "password":  "9923005203"
+    },
+    {
+        "email":  "9923005247@klu.ac.in",
+        "password":  "9923005247"
+    },
+    {
+        "email":  "9923005001@klu.ac.in",
+        "password":  "9923005001"
+    },
+    {
+        "email":  "9923005259@klu.ac.in",
+        "password":  "9923005259"
+    },
+    {
+        "email":  "9923005237@klu.ac.in",
+        "password":  "9923005237"
+    },
+    {
+        "email":  "9922005054@klu.ac.in",
+        "password":  "9922005054"
+    }
 ]
