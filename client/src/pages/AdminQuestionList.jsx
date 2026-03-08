@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { API_ENDPOINTS } from '../api'
 import AdminNavbar from '../components/AdminNavbar'
 import { useNavigate } from 'react-router-dom'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 function AdminQuestionList() {
   const [questions, setQuestions] = useState([])
@@ -94,6 +96,80 @@ function AdminQuestionList() {
       navigate('/admin', { state: { question } })
   }
 
+    const resolveCorrectAnswerText = (question) => {
+        if (!question) return 'N/A'
+
+        const correctIndex = resolveCorrectIndex(question)
+        if (correctIndex >= 0 && Array.isArray(question.options) && question.options[correctIndex] !== undefined) {
+            return question.options[correctIndex]
+        }
+
+        if (question.correctAnswer !== null && question.correctAnswer !== undefined && String(question.correctAnswer).trim()) {
+            return String(question.correctAnswer)
+        }
+
+        return 'N/A'
+    }
+
+    const handleDownloadQuestions = () => {
+        if (!questions.length) {
+            alert('No questions available to download.')
+            return
+        }
+
+        const formatOptionsText = (question) => {
+            if (!Array.isArray(question?.options) || question.options.length === 0) {
+                return 'N/A'
+            }
+
+            return question.options
+                .map((opt, idx) => `${String.fromCharCode(65 + idx)}. ${opt}`)
+                .join('\n')
+        }
+
+        const rows = questions.map((q, index) => [
+            index + 1,
+            q.text || 'N/A',
+            formatOptionsText(q),
+            resolveCorrectAnswerText(q),
+            q.marks ?? 'N/A',
+        ])
+
+        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+        const date = new Date().toISOString().slice(0, 10)
+
+        doc.setFontSize(14)
+        doc.text('Questions List', 40, 40)
+        doc.setFontSize(10)
+        doc.text(`Generated on: ${date}`, 40, 58)
+
+        autoTable(doc, {
+            startY: 74,
+            head: [['Question Number', 'Question', 'Options', 'Answer', 'Marks']],
+            body: rows,
+            styles: {
+                fontSize: 9,
+                cellPadding: 6,
+                valign: 'top',
+            },
+            headStyles: {
+                fillColor: [30, 64, 175],
+                textColor: 255,
+                fontStyle: 'bold',
+            },
+            columnStyles: {
+                0: { cellWidth: 70 },
+                1: { cellWidth: 220 },
+                2: { cellWidth: 230 },
+                3: { cellWidth: 160 },
+                4: { cellWidth: 45 },
+            },
+            margin: { left: 40, right: 40 },
+        })
+
+        doc.save(`questions-list-${date}.pdf`)
+    }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-5xl px-4 py-6">
@@ -104,12 +180,20 @@ function AdminQuestionList() {
                 <h1 className="text-xl font-semibold text-slate-900">Questions List</h1>
                 <p className="mt-1 text-sm text-slate-500">View all questions in the question bank.</p>
             </div>
-            <button 
-                onClick={() => navigate('/admin')}
-                className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
-            >
-                Add New Question
-            </button>
+            <div className="flex items-center gap-3">
+                <button
+                    onClick={handleDownloadQuestions}
+                    className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700"
+                >
+                    Download PDF
+                </button>
+                <button 
+                    onClick={() => navigate('/admin')}
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
+                >
+                    Add New Question
+                </button>
+            </div>
         </div>
 
         {loading ? (

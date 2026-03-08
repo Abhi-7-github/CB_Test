@@ -116,4 +116,52 @@ router.get('/scores', async (req, res) => {
     }
 });
 
+router.post('/scores/bulk', async (req, res) => {
+  try {
+    const scores = Array.isArray(req.body) ? req.body : req.body?.scores;
+
+    if (!Array.isArray(scores) || scores.length === 0) {
+      return res.status(400).json({
+        message: 'Provide a non-empty array of score objects',
+      });
+    }
+
+    const invalidIndex = scores.findIndex((item) => !item?.studentEmail);
+    if (invalidIndex !== -1) {
+      return res.status(400).json({
+        message: `studentEmail is required at index ${invalidIndex}`,
+      });
+    }
+
+    const operations = scores.map((item) => ({
+      updateOne: {
+        filter: { studentEmail: String(item.studentEmail).trim().toLowerCase() },
+        update: {
+          $set: {
+            score: Number.isFinite(Number(item.score)) ? Number(item.score) : 0,
+            totalMarks: Number.isFinite(Number(item.totalMarks)) ? Number(item.totalMarks) : 0,
+          },
+          $setOnInsert: {
+            studentEmail: String(item.studentEmail).trim().toLowerCase(),
+          },
+        },
+        upsert: true,
+      },
+    }));
+
+    const result = await Score.bulkWrite(operations, { ordered: false });
+
+    return res.status(200).json({
+      message: 'Bulk scores processed successfully',
+      received: scores.length,
+      inserted: result.upsertedCount || 0,
+      updated: result.modifiedCount || 0,
+      matched: result.matchedCount || 0,
+    });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ message: 'Failed to process bulk scores', error: err.message });
+  }
+});
+
 module.exports = router;
