@@ -16,7 +16,7 @@ function StudentQuestions() {
   const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' })
   const [answers, setAnswers] = useState({})
   const [markedForReview, setMarkedForReview] = useState({})
-  const examDurationSeconds = 30 * 60
+  const examDurationSeconds = 60 * 60
   const [remainingSeconds, setRemainingSeconds] = useState(examDurationSeconds)
   const autoSubmitTriggeredRef = useRef(false)
   const screenPreviewRef = useRef(null)
