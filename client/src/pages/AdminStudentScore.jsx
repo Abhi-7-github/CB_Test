@@ -12,12 +12,51 @@ function AdminStudentScore() {
     const fetchScores = async () => {
       setLoading(true)
       try {
-        const response = await fetch(API_ENDPOINTS.scores)
-        if (!response.ok) {
-          throw new Error('Failed to fetch scores')
+        let serverScores = []
+        try {
+          const response = await fetch(API_ENDPOINTS.scores)
+          if (response.ok) {
+            serverScores = await response.json()
+          }
+        } catch (err) {
+          console.warn('Backend server scores fetch failed, checking local storage:', err)
         }
-        const data = await response.json()
-        setScores(data)
+
+        let localScores = []
+        try {
+          localScores = JSON.parse(localStorage.getItem('allStudentScores') || '[]')
+        } catch {
+          // ignore
+        }
+
+        // Also check individual local storage keys studentScore:*
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i)
+          if (key && key.startsWith('studentScore:')) {
+            try {
+              const item = JSON.parse(localStorage.getItem(key))
+              if (item?.studentEmail) {
+                localScores.push(item)
+              }
+            } catch {
+              // ignore
+            }
+          }
+        }
+
+        const scoreMapCombined = new Map()
+        localScores.forEach((s) => {
+          if (s?.studentEmail) {
+            scoreMapCombined.set(String(s.studentEmail).trim().toLowerCase(), s)
+          }
+        })
+        serverScores.forEach((s) => {
+          if (s?.studentEmail) {
+            scoreMapCombined.set(String(s.studentEmail).trim().toLowerCase(), s)
+          }
+        })
+
+        setScores(Array.from(scoreMapCombined.values()))
       } catch (err) {
         setError(err.message)
       } finally {
@@ -32,7 +71,7 @@ function AdminStudentScore() {
     const map = new Map()
     scores.forEach((score) => {
       if (score?.studentEmail) {
-        map.set(score.studentEmail, score)
+        map.set(String(score.studentEmail).trim().toLowerCase(), score)
       }
     })
     return map
@@ -40,10 +79,11 @@ function AdminStudentScore() {
 
   const mergedRows = useMemo(() => {
     return (studentData || []).map((student) => {
-      const email = student.email
+      const email = student.email ? String(student.email).trim().toLowerCase() : ''
       const score = scoreMap.get(email)
       return {
-        email,
+        teamName: student.teamName || 'N/A',
+        email: student.email,
         score,
       }
     })
@@ -62,12 +102,13 @@ function AdminStudentScore() {
   }
 
   const downloadCSV = () => {
-    const headers = ['Student Email', 'Score', 'Total Marks', 'Percentage', 'Date']
+    const headers = ['Team Name', 'Student Email', 'Score', 'Total Marks', 'Percentage', 'Date']
     const csvRows = [headers.join(',')]
 
     mergedRows.forEach((row) => {
       const score = row.score
       const values = [
+        row.teamName,
         row.email,
         score ? score.score : 'Not attempted',
         score ? score.totalMarks : 'Not attempted',
@@ -125,6 +166,9 @@ function AdminStudentScore() {
               <thead className="bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Team Name
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Student Email
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -141,23 +185,26 @@ function AdminStudentScore() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {mergedRows.length === 0 && !loading && !error && (
                   <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan="4">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan="5">
                       No students available yet.
                     </td>
                   </tr>
                 )}
                 {mergedRows.map((row) => (
                   <tr key={row.email}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
+                      {row.teamName}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {row.email}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {row.score ? `${row.score.score} / ${row.score.totalMarks}` : 'Not attempted'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {formatPercentage(row.score)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                       {row.score
                         ? new Date(row.score.updatedAt || row.score.createdAt).toLocaleString(undefined, {
                             year: 'numeric',

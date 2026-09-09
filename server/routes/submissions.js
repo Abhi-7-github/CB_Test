@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const multer = require('multer');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const cloudinary = require('../config/cloudinary');
@@ -55,6 +56,41 @@ router.post('/questions/:id/submissions', upload.single('file'), async (req, res
   }
 });
 
+function resolveCorrectIndex(question) {
+  if (!question || !Array.isArray(question.options)) return null;
+  const total = question.options.length;
+  const raw = question.correctAnswer;
+  if (raw === null || raw === undefined) return null;
+
+  if (typeof raw === 'number' && Number.isFinite(raw)) {
+    if (raw >= 0 && raw < total) return raw;
+    if (raw >= 1 && raw <= total) return raw - 1;
+    return null;
+  }
+
+  const text = String(raw).trim();
+  if (!text) return null;
+
+  if (/^[A-Za-z]$/.test(text)) {
+    const idx = text.toUpperCase().charCodeAt(0) - 65;
+    return idx >= 0 && idx < total ? idx : null;
+  }
+
+  if (/^\d+$/.test(text)) {
+    const num = Number(text);
+    if (num >= 0 && num < total) return num;
+    if (num >= 1 && num <= total) return num - 1;
+    return null;
+  }
+
+  const exactIdx = question.options.indexOf(text);
+  if (exactIdx !== -1) return exactIdx;
+
+  const lowered = text.toLowerCase();
+  const ciIdx = question.options.findIndex((opt) => String(opt).toLowerCase() === lowered);
+  return ciIdx !== -1 ? ciIdx : null;
+}
+
 router.post('/submit-test', async (req, res) => {
   try {
     const { studentEmail, responses } = req.body;
@@ -63,46 +99,79 @@ router.post('/submit-test', async (req, res) => {
       return res.status(400).json({ message: 'Student email is required' });
     }
 
-    
-    const questionIds = Object.keys(responses || {});
-   
-    
-    
-    const questions = await Question.find({ _id: { $in: questionIds }, type: 'mcq' });
+    const normalizedEmail = String(studentEmail).trim().toLowerCase();
+    const responsesObj = responses || {};
+    const questionIds = Object.keys(responsesObj);
 
-    
+    // Filter valid MongoDB ObjectIds to prevent CastError crashes
+    const validObjectIds = questionIds.filter(id => mongoose.Types.ObjectId.isValid(id));
+
+    // Find questions by _id or custom id
+    const questions = await Question.find({
+      $or: [
+        { _id: { $in: validObjectIds } },
+        { id: { $in: questionIds } }
+      ]
+    });
+
     const allQuestions = await Question.find({}); 
     const totalPossibleMarks = allQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
 
     let totalScore = 0;
-    
 
-    const questionMap = new Map(questions.map(q => [q._id.toString(), q]));
+    const questionMap = new Map();
+    questions.forEach(q => {
+      if (q._id) questionMap.set(q._id.toString(), q);
+      if (q.id) questionMap.set(q.id.toString(), q);
+    });
 
-    for (const [qId, selectedIdx] of Object.entries(responses)) {
-        const question = questionMap.get(qId);
-        if (question) {
-            const isCorrect = Number(selectedIdx) === Number(question.correctAnswer);
-            const marks = isCorrect ? (question.marks || 1) : 0;
-            
-            totalScore += marks;
-            
-        }
+    for (const [qId, selectedIdx] of Object.entries(responsesObj)) {
+      const question = questionMap.get(qId);
+      if (question) {
+        const correctIdx = resolveCorrectIndex(question);
+        const isCorrect = correctIdx !== null && Number(selectedIdx) === Number(correctIdx);
+        const marks = isCorrect ? (question.marks || 1) : 0;
+        totalScore += marks;
+      }
     }
 
-    await Score.findOneAndUpdate(
-      { studentEmail },
+    const scoreDoc = await Score.findOneAndUpdate(
+      { studentEmail: normalizedEmail },
       {
         score: totalScore,
-        totalMarks: totalPossibleMarks
+        totalMarks: totalPossibleMarks,
+        responses: responsesObj
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    res.status(200).json({ message: 'Test submitted', score: totalScore, totalMarks: totalPossibleMarks });
+    const submissionDoc = await Submission.create({
+      studentEmail: normalizedEmail,
+      responses: responsesObj,
+      score: totalScore,
+      totalMarks: totalPossibleMarks
+    });
+
+    return res.status(200).json({
+      message: 'Test submitted',
+      score: totalScore,
+      totalMarks: totalPossibleMarks,
+      scoreDoc,
+      submissionDoc
+    });
+  } catch (err) {
+    console.error('Error submitting test:', err);
+    return res.status(500).json({ message: 'Failed to submit test', error: err.message });
+  }
+});
+
+router.get('/submissions', async (req, res) => {
+  try {
+    const submissions = await Submission.find().sort({ createdAt: -1 });
+    return res.status(200).json(submissions);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: 'Failed to submit test', error: err.message });
+    return res.status(500).json({ message: 'Failed to fetch submissions', error: err.message });
   }
 });
 

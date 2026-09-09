@@ -28,6 +28,9 @@ function StudentLogin() {
       }
       localStorage.setItem('studentVerified', 'true')
       localStorage.setItem('studentEmail', email)
+      if (match.teamName) {
+        localStorage.setItem('teamName', match.teamName)
+      }
       localStorage.removeItem('systemCheckPassed')
       window.dispatchEvent(new Event('student-verified'))
       setStatus({ type: 'success', message: 'Login successful.' })

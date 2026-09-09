@@ -4,25 +4,31 @@ const { Schema, model } = mongoose;
 
 const SubmissionSchema = new Schema(
   {
-    question: {
-      type: Schema.Types.ObjectId,
-      ref: 'Question',
-      required: true,
-    },
     studentEmail: {
       type: String,
+      required: true,
       trim: true,
       lowercase: true,
     },
+    question: {
+      type: Schema.Types.ObjectId,
+      ref: 'Question',
+    },
+    responses: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
+    score: {
+      type: Number,
+      default: 0,
+    },
+    totalMarks: {
+      type: Number,
+      default: 0,
+    },
     file: {
-      url: {
-        type: String,
-        required: true,
-      },
-      publicId: {
-        type: String,
-        required: true,
-      },
+      url: String,
+      publicId: String,
       originalName: String,
       mimeType: String,
       size: Number,

@@ -20,7 +20,10 @@ const ScoreSchema = new Schema(
       required: true,
       default: 0,
     },
-
+    responses: {
+      type: Schema.Types.Mixed,
+      default: {},
+    },
   },
   { timestamps: true }
 );
