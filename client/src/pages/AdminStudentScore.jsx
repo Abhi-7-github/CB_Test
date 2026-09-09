@@ -1,12 +1,27 @@
 import { useState, useEffect, useMemo } from 'react'
 import AdminNavbar from '../components/AdminNavbar'
 import { API_ENDPOINTS } from '../api'
-import studentData from '../data/studentdata.json'
 
 function AdminStudentScore() {
+  const [studentData, setStudentData] = useState([])
   const [scores, setScores] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const loadStudentData = async () => {
+      try {
+        const res = await fetch('/data/studentdata.json')
+        if (res.ok) {
+          const data = await res.json()
+          setStudentData(data)
+        }
+      } catch (err) {
+        console.error('Failed to load student data:', err)
+      }
+    }
+    loadStudentData()
+  }, [])
 
   useEffect(() => {
     const fetchScores = async () => {
@@ -87,7 +102,7 @@ function AdminStudentScore() {
         score,
       }
     })
-  }, [scoreMap])
+  }, [studentData, scoreMap])
 
   const formatPercentage = (score) => {
     if (!score) return 'Not attempted'

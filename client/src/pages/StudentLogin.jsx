@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import studentData from '../data/studentdata.json'
 import TextField from '../components/TextField'
 
 function StudentLogin() {
@@ -9,7 +8,7 @@ function StudentLogin() {
   const [password, setPassword] = useState('')
   const [status, setStatus] = useState({ type: 'idle', message: '' })
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault()
 
     if (!email.endsWith('@klu.ac.in')) {
@@ -17,26 +16,36 @@ function StudentLogin() {
       return
     }
 
-    const match = studentData.find(
-      (student) => student.email === email && student.password === password
-    )
+    try {
+      const res = await fetch('/data/studentdata.json')
+      if (!res.ok) {
+        throw new Error('Failed to load student data')
+      }
+      const studentData = await res.json()
 
-    if (match) {
-      if (localStorage.getItem(`testSubmitted:${email}`) === 'true') {
-        setStatus({ type: 'error', message: 'You have already submitted the test.' })
-        return
+      const match = studentData.find(
+        (student) => student.email === email && student.password === password
+      )
+
+      if (match) {
+        if (localStorage.getItem(`testSubmitted:${email}`) === 'true') {
+          setStatus({ type: 'error', message: 'You have already submitted the test.' })
+          return
+        }
+        localStorage.setItem('studentVerified', 'true')
+        localStorage.setItem('studentEmail', email)
+        if (match.teamName) {
+          localStorage.setItem('teamName', match.teamName)
+        }
+        localStorage.removeItem('systemCheckPassed')
+        window.dispatchEvent(new Event('student-verified'))
+        setStatus({ type: 'success', message: 'Login successful.' })
+        navigate('/system-check', { replace: true })
+      } else {
+        setStatus({ type: 'error', message: 'Bro check your email or password.' })
       }
-      localStorage.setItem('studentVerified', 'true')
-      localStorage.setItem('studentEmail', email)
-      if (match.teamName) {
-        localStorage.setItem('teamName', match.teamName)
-      }
-      localStorage.removeItem('systemCheckPassed')
-      window.dispatchEvent(new Event('student-verified'))
-      setStatus({ type: 'success', message: 'Login successful.' })
-      navigate('/system-check', { replace: true })
-    } else {
-      setStatus({ type: 'error', message: 'Bro check your email or password.' })
+    } catch (err) {
+      setStatus({ type: 'error', message: 'Error verifying credentials. Please try again.' })
     }
   }
 

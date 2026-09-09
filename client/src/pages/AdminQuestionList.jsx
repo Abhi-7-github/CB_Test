@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import { API_ENDPOINTS } from '../api'
 import AdminNavbar from '../components/AdminNavbar'
 import { useNavigate } from 'react-router-dom'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 
 function AdminQuestionList() {
   const [questions, setQuestions] = useState([])
@@ -111,11 +109,14 @@ function AdminQuestionList() {
         return 'N/A'
     }
 
-    const handleDownloadQuestions = () => {
+    const handleDownloadQuestions = async () => {
         if (!questions.length) {
             alert('No questions available to download.')
             return
         }
+
+        const { default: jsPDF } = await import('jspdf')
+        const { default: autoTable } = await import('jspdf-autotable')
 
         const formatOptionsText = (question) => {
             if (!Array.isArray(question?.options) || question.options.length === 0) {
