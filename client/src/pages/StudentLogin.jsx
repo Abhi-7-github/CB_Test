@@ -55,25 +55,25 @@ function StudentLogin() {
       <p className="mt-1 text-sm text-slate-500">Use your KLU student credentials.</p>
 
       <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
-          <TextField
-            id="email"
-            label="Email"
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="student@klu.ac.in"
-            required
-          />
+        <TextField
+          id="email"
+          label="Email"
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="student@klu.ac.in"
+          required
+        />
 
-          <TextField
-            id="password"
-            label="Password"
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            placeholder="••••••••"
-            required
-          />
+        <TextField
+          id="password"
+          label="Password"
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          placeholder="••••••••"
+          required
+        />
 
         <button
           type="submit"
@@ -85,11 +85,10 @@ function StudentLogin() {
 
       {status.message && (
         <div
-          className={`mt-4 rounded-md px-3 py-2 text-sm font-semibold ${
-            status.type === 'success'
+          className={`mt-4 rounded-md px-3 py-2 text-sm font-semibold ${status.type === 'success'
               ? 'bg-emerald-50 text-emerald-700'
               : 'bg-rose-50 text-rose-700'
-          }`}
+            }`}
         >
           {status.message}
         </div>

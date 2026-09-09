@@ -4,10 +4,10 @@ import { API_ENDPOINTS } from '../api'
 
 export default function AdminNavbar() {
   const location = useLocation()
-  
+
   const isActive = (path) => {
-    return location.pathname === path 
-      ? 'border-slate-900 text-slate-900' 
+    return location.pathname === path
+      ? 'border-slate-900 text-slate-900'
       : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
   }
 
@@ -94,19 +94,19 @@ export default function AdminNavbar() {
           </div>
         </div>
 
-             <button
-                onClick={toggleTestStatus}
-                disabled={loading}
-                className={`
+        <button
+          onClick={toggleTestStatus}
+          disabled={loading}
+          className={`
                   px-4 py-2 rounded-md font-bold text-sm shadow-sm transition-all
-                  ${isTestActive 
-                    ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200' 
-                    : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200'}
+                  ${isTestActive
+              ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200'
+              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200'}
                   disabled:opacity-50 disabled:cursor-not-allowed
                 `}
-             >
-                {loading ? '...' : isTestActive ? 'Stop Test' : 'Begin Test'}
-             </button>
+        >
+          {loading ? '...' : isTestActive ? 'Stop Test' : 'Begin Test'}
+        </button>
       </div>
     </nav>
   )

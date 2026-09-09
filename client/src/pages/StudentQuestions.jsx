@@ -886,7 +886,7 @@ function StudentQuestions() {
                             </button>
                             {uploadStatus[qId] && (
                               <div className={`mt-2 text-sm font-bold ${uploadStatus[qId].type === 'success' ? 'text-emerald-600' :
-                                  uploadStatus[qId].type === 'loading' ? 'text-blue-600' : 'text-rose-600'
+                                uploadStatus[qId].type === 'loading' ? 'text-blue-600' : 'text-rose-600'
                                 }`}>
                                 {uploadStatus[qId].message}
                               </div>
