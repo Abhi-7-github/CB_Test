@@ -155,6 +155,43 @@ function AdminStudentScore() {
     document.body.removeChild(link)
   }
 
+  const handleResetSingleStudent = async (email) => {
+    if (!email) return
+    const cleanEmail = String(email).trim().toLowerCase()
+
+    if (!window.confirm(`Are you sure you want to reset the exam attempt for ${email}? This will clear their score and allow them to take the exam again.`)) {
+      return
+    }
+
+    localStorage.removeItem(`studentScore:${cleanEmail}`)
+    localStorage.removeItem(`studentScore:${email}`)
+
+    try {
+      const allLocal = JSON.parse(localStorage.getItem('allStudentScores') || '[]')
+      const updatedLocal = allLocal.filter(
+        (s) => String(s?.studentEmail).trim().toLowerCase() !== cleanEmail
+      )
+      localStorage.setItem('allStudentScores', JSON.stringify(updatedLocal))
+    } catch (e) {
+      console.error('Failed to update local storage array on reset:', e)
+    }
+
+    try {
+      const response = await fetch(API_ENDPOINTS.resetScore(cleanEmail), {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        console.warn('Server score reset failed:', response.statusText)
+      }
+    } catch (err) {
+      console.error('API call failed to reset score:', err)
+    }
+
+    setScores((prevScores) =>
+      prevScores.filter((s) => String(s?.studentEmail).trim().toLowerCase() !== cleanEmail)
+    )
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-5xl px-4 py-6">
@@ -195,12 +232,15 @@ function AdminStudentScore() {
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Exam Finished Time
                   </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {mergedRows.length === 0 && !loading && !error && (
                   <tr>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan="5">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" colSpan="6">
                       No students available yet.
                     </td>
                   </tr>
@@ -230,6 +270,20 @@ function AdminStudentScore() {
                             second: '2-digit'
                           })
                         : 'Not attempted'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {row.score ? (
+                        <button
+                          onClick={() => handleResetSingleStudent(row.email)}
+                          className="px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded text-xs font-semibold shadow-sm transition-colors flex items-center gap-1.5"
+                          title="Reset exam attempt and clear marks"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                          Reset
+                        </button>
+                      ) : (
+                        <span className="text-xs text-slate-400 font-medium">Not attempted</span>
+                      )}
                     </td>
                   </tr>
                 ))}

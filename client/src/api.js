@@ -8,6 +8,8 @@ const API_ENDPOINTS = {
   submitTest: `${API_BASE_URL}/api/submit-test`,
   adminVerify: `${API_BASE_URL}/api/admin/verify`,
   scores: `${API_BASE_URL}/api/scores`,
+  checkScore: (email) => `${API_BASE_URL}/api/scores/check/${encodeURIComponent(email)}`,
+  resetScore: (email) => `${API_BASE_URL}/api/scores/reset/${encodeURIComponent(email)}`,
   testStatus: `${API_BASE_URL}/api/test-status`,
 }
 

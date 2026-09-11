@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TextField from '../components/TextField'
+import { API_ENDPOINTS } from '../api'
 
 function StudentLogin() {
   const navigate = useNavigate()
@@ -16,7 +17,22 @@ function StudentLogin() {
       return
     }
 
+    const cleanEmail = email.trim().toLowerCase()
+
     try {
+      // Check database if test is already submitted / scores are saved
+      const checkRes = await fetch(API_ENDPOINTS.checkScore(cleanEmail))
+      if (checkRes.ok) {
+        const checkData = await checkRes.json()
+        if (checkData.hasSubmitted || checkData.isSubmitted) {
+          setStatus({
+            type: 'error',
+            message: 'You have already submitted the exam. Scores are saved in DB and rewriting is not allowed.'
+          })
+          return
+        }
+      }
+
       const res = await fetch('/data/studentdata.json')
       if (!res.ok) {
         throw new Error('Failed to load student data')
@@ -28,10 +44,6 @@ function StudentLogin() {
       )
 
       if (match) {
-        if (localStorage.getItem(`testSubmitted:${email}`) === 'true') {
-          setStatus({ type: 'error', message: 'You have already submitted the test.' })
-          return
-        }
         localStorage.setItem('studentVerified', 'true')
         localStorage.setItem('studentEmail', email)
         if (match.teamName) {

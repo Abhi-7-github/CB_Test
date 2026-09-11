@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import AdminNavbar from '../components/AdminNavbar'
 import TextField from '../components/TextField'
+import { API_ENDPOINTS } from '../api'
 
 function AdminTestReset() {
   const [resetEmail, setResetEmail] = useState('')
@@ -15,20 +16,32 @@ function AdminTestReset() {
     }
   }, [])
 
-
   if (!isVerified) {
     return <Navigate to="/admin" replace />
   }
 
-  const handleResetAttempt = () => {
+  const handleResetAttempt = async () => {
     if (!resetEmail.trim()) {
       setResetStatus('Enter a student email to reset.')
       return
     }
 
-    
-    localStorage.removeItem(`testSubmitted:${resetEmail.trim().toLowerCase()}`)
-    setResetStatus(`Attempt reset for ${resetEmail} (local browser context).`)
+    const cleanEmail = resetEmail.trim().toLowerCase()
+
+    try {
+      const res = await fetch(API_ENDPOINTS.resetScore(cleanEmail), {
+        method: 'DELETE'
+      })
+      if (res.ok) {
+        setResetStatus(`Attempt and scores successfully reset in database for ${resetEmail}.`)
+      } else {
+        const errData = await res.json().catch(() => ({}))
+        setResetStatus(`DB reset returned: ${errData.message || res.statusText}`)
+      }
+    } catch (err) {
+      console.error('Error resetting student score in DB:', err)
+      setResetStatus(`Backend reset request failed for ${resetEmail}.`)
+    }
   }
 
   return (

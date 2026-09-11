@@ -33,6 +33,10 @@ const SubmissionSchema = new Schema(
       mimeType: String,
       size: Number,
     },
+    isSubmitted: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

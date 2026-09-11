@@ -24,6 +24,10 @@ const ScoreSchema = new Schema(
       type: Schema.Types.Mixed,
       default: {},
     },
+    isSubmitted: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

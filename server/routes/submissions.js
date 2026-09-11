@@ -100,6 +100,17 @@ router.post('/submit-test', async (req, res) => {
     }
 
     const normalizedEmail = String(studentEmail).trim().toLowerCase();
+
+    const existingScore = await Score.findOne({ studentEmail: normalizedEmail });
+    if (existingScore) {
+      return res.status(403).json({
+        message: 'Exam already submitted. You are not allowed to rewrite the exam.',
+        hasSubmitted: true,
+        score: existingScore.score,
+        totalMarks: existingScore.totalMarks
+      });
+    }
+
     const responsesObj = responses || {};
     const questionIds = Object.keys(responsesObj);
 
@@ -140,7 +151,8 @@ router.post('/submit-test', async (req, res) => {
       {
         score: totalScore,
         totalMarks: totalPossibleMarks,
-        responses: responsesObj
+        responses: responsesObj,
+        isSubmitted: true
       },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
@@ -149,13 +161,15 @@ router.post('/submit-test', async (req, res) => {
       studentEmail: normalizedEmail,
       responses: responsesObj,
       score: totalScore,
-      totalMarks: totalPossibleMarks
+      totalMarks: totalPossibleMarks,
+      isSubmitted: true
     });
 
     return res.status(200).json({
       message: 'Test submitted',
       score: totalScore,
       totalMarks: totalPossibleMarks,
+      isSubmitted: true,
       scoreDoc,
       submissionDoc
     });
@@ -172,6 +186,38 @@ router.get('/submissions', async (req, res) => {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: 'Failed to fetch submissions', error: err.message });
+  }
+});
+
+router.get('/scores/check/:email', async (req, res) => {
+  try {
+    const email = String(req.params.email).trim().toLowerCase();
+    const emailRegex = new RegExp(`^${email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+    const existingScore = await Score.findOne({ studentEmail: emailRegex });
+    if (existingScore) {
+      return res.json({ hasSubmitted: true, isSubmitted: true, score: existingScore });
+    }
+    const existingSubmission = await Submission.findOne({ studentEmail: emailRegex });
+    if (existingSubmission) {
+      return res.json({ hasSubmitted: true, isSubmitted: true, submission: existingSubmission });
+    }
+    return res.json({ hasSubmitted: false, isSubmitted: false });
+  } catch (err) {
+    console.error('Error checking student score status:', err);
+    return res.status(500).json({ message: 'Failed to check score status', error: err.message });
+  }
+});
+
+router.delete('/scores/reset/:email', async (req, res) => {
+  try {
+    const email = String(req.params.email).trim().toLowerCase();
+    const emailRegex = new RegExp(`^${email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
+    await Score.deleteMany({ studentEmail: emailRegex });
+    await Submission.deleteMany({ studentEmail: emailRegex });
+    return res.json({ message: `Successfully reset test attempt and scores for ${email}` });
+  } catch (err) {
+    console.error('Error resetting score status:', err);
+    return res.status(500).json({ message: 'Failed to reset score status', error: err.message });
   }
 });
 

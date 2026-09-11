@@ -29,6 +29,42 @@ function SystemCheck() {
     }
     document.addEventListener('fullscreenchange', handleFullscreenChange)
 
+    // Key & Context Menu Proctoring Restrictions (Blocks Ctrl+I, Ctrl+A, Ctrl+V, Ctrl+J, Windows Key, etc.)
+    const handleKeyDownRestrictions = (e) => {
+      const key = e.key ? e.key.toLowerCase() : ''
+      const isCtrlOrMeta = e.ctrlKey || e.metaKey
+
+      // Block Windows Key / Meta Key / OS Key
+      if (e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92) {
+        e.preventDefault()
+        e.stopPropagation()
+        return false
+      }
+
+      // Block Ctrl+I, Ctrl+A, Ctrl+V, Ctrl+J, Ctrl+C, Ctrl+U, Ctrl+S, Ctrl+P
+      if (isCtrlOrMeta && ['i', 'a', 'v', 'j', 'c', 'u', 's', 'p'].includes(key)) {
+        e.preventDefault()
+        e.stopPropagation()
+        return false
+      }
+
+      // Block F12 DevTools
+      if (e.key === 'F12' || e.keyCode === 123) {
+        e.preventDefault()
+        e.stopPropagation()
+        return false
+      }
+    }
+
+    const handleContextMenuRestrictions = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      return false
+    }
+
+    window.addEventListener('keydown', handleKeyDownRestrictions, true)
+    window.addEventListener('contextmenu', handleContextMenuRestrictions, true)
+
     // Auto-attach existing streams to refs if they exist on mount
     if (screenStream && screenRef.current) {
       screenRef.current.srcObject = screenStream
@@ -37,7 +73,11 @@ function SystemCheck() {
       cameraRef.current.srcObject = cameraStream
     }
 
-    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange)
+      window.removeEventListener('keydown', handleKeyDownRestrictions, true)
+      window.removeEventListener('contextmenu', handleContextMenuRestrictions, true)
+    }
   }, [screenStream, cameraStream]) // Dep on streams to ensure re-attach if they were init from window
 
   useEffect(() => {
@@ -53,6 +93,19 @@ function SystemCheck() {
       }
     }
     loadQuestionsCount()
+
+    const email = localStorage.getItem('studentEmail')
+    if (email) {
+      fetch(API_ENDPOINTS.checkScore(email.trim().toLowerCase()))
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (!ignore && (data?.hasSubmitted || data?.isSubmitted)) {
+            setError('You have already submitted the exam. Scores are saved in DB and rewriting is not allowed.')
+          }
+        })
+        .catch((err) => console.warn('Check score error in SystemCheck:', err))
+    }
+
     return () => { ignore = true }
   }, [])
 
@@ -178,6 +231,22 @@ function SystemCheck() {
     if (enteredCode !== validCode) {
       setError('Invalid security code.')
       return
+    }
+
+    const email = localStorage.getItem('studentEmail')
+    if (email) {
+      try {
+        const checkRes = await fetch(API_ENDPOINTS.checkScore(email.trim().toLowerCase()))
+        if (checkRes.ok) {
+          const checkData = await checkRes.json()
+          if (checkData.hasSubmitted || checkData.isSubmitted) {
+            setError('You have already submitted the exam. Scores are saved in DB and rewriting is not allowed.')
+            return
+          }
+        }
+      } catch (err) {
+        console.warn('DB score check failed on startAssessment:', err)
+      }
     }
 
     try {

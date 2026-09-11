@@ -162,7 +162,15 @@ function StudentQuestions() {
     }
 
     if (email) {
-      setIsSubmitted(localStorage.getItem(`testSubmitted:${email}`) === 'true')
+      const cleanEmail = email.trim().toLowerCase()
+      fetch(API_ENDPOINTS.checkScore(cleanEmail))
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.hasSubmitted || data?.isSubmitted) {
+            setIsSubmitted(true)
+          }
+        })
+        .catch((err) => console.warn('Failed to verify DB score on StudentQuestions mount:', err))
     }
 
   }, [])
@@ -313,6 +321,42 @@ function StudentQuestions() {
     // CSS to prevent swipe navigation
     document.body.style.overscrollBehaviorX = 'none'
 
+    // Key & Context Menu Proctoring Restrictions (Blocks Ctrl+I, Ctrl+A, Ctrl+V, Ctrl+J, Windows Key, etc.)
+    const handleKeyDownRestrictions = (e) => {
+      const key = e.key ? e.key.toLowerCase() : ''
+      const isCtrlOrMeta = e.ctrlKey || e.metaKey
+
+      // Block Windows Key / Meta Key / OS Key
+      if (e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92) {
+        e.preventDefault()
+        e.stopPropagation()
+        return false
+      }
+
+      // Block Ctrl+I, Ctrl+A, Ctrl+V, Ctrl+J, Ctrl+C, Ctrl+U, Ctrl+S, Ctrl+P
+      if (isCtrlOrMeta && ['i', 'a', 'v', 'j', 'c', 'u', 's', 'p'].includes(key)) {
+        e.preventDefault()
+        e.stopPropagation()
+        return false
+      }
+
+      // Block F12 DevTools
+      if (e.key === 'F12' || e.keyCode === 123) {
+        e.preventDefault()
+        e.stopPropagation()
+        return false
+      }
+    }
+
+    const handleContextMenuRestrictions = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      return false
+    }
+
+    window.addEventListener('keydown', handleKeyDownRestrictions, true)
+    window.addEventListener('contextmenu', handleContextMenuRestrictions, true)
+
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
     document.addEventListener('mozfullscreenchange', handleFullscreenChange)
@@ -321,6 +365,8 @@ function StudentQuestions() {
     return () => {
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('keydown', handleKeyDownRestrictions, true)
+      window.removeEventListener('contextmenu', handleContextMenuRestrictions, true)
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
       document.removeEventListener('webkitfullscreenchange', handleFullscreenChange)
       document.removeEventListener('mozfullscreenchange', handleFullscreenChange)
@@ -545,6 +591,16 @@ function StudentQuestions() {
           })
         })
 
+        if (response.status === 403) {
+          const errData = await response.json().catch(() => ({}))
+          setIsSubmitted(true)
+          setSubmitStatus({
+            type: 'error',
+            message: errData.message || 'Exam already submitted. You are not allowed to rewrite the exam.'
+          })
+          return
+        }
+
         if (response.ok) {
           const resData = await response.json()
           resultScore = resData.score !== undefined ? resData.score : 0
@@ -590,7 +646,6 @@ function StudentQuestions() {
         console.error('Failed to update local scores array:', e)
       }
 
-      localStorage.setItem(`testSubmitted:${currentStudentEmail}`, 'true')
       setIsSubmitted(true)
       setSubmitStatus({ type: 'success', message: 'Test submitted successfully!' })
     } catch (err) {
