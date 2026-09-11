@@ -3,6 +3,15 @@ import { API_ENDPOINTS } from '../api'
 
 import { useNavigate } from 'react-router-dom'
 
+function shuffleArray(array) {
+  const arr = [...array]
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
 function StudentQuestions() {
   const navigate = useNavigate()
   const [questions, setQuestions] = useState([])
@@ -37,14 +46,32 @@ function StudentQuestions() {
   }, [isTestActive, hasStartedExam])
 
   useEffect(() => {
-    // Question loading
+    // Question loading & jumbling (shuffling questions and options)
     let ignore = false
     const loadQuestions = async () => {
       try {
         const response = await fetch(API_ENDPOINTS.questions)
         if (!response.ok) throw new Error('Failed to load questions')
         const data = await response.json()
-        if (!ignore) setQuestions(data)
+        if (!ignore) {
+          const rawQuestions = Array.isArray(data) ? data : []
+          const formattedQuestions = rawQuestions.map((q) => {
+            let jumbledOptions = []
+            if (Array.isArray(q.options) && q.options.length > 0) {
+              const optionsWithOrig = q.options.map((optText, origIdx) => ({
+                text: optText,
+                originalIndex: origIdx
+              }))
+              jumbledOptions = shuffleArray(optionsWithOrig)
+            }
+            return {
+              ...q,
+              jumbledOptions
+            }
+          })
+          const shuffledQuestions = shuffleArray(formattedQuestions)
+          setQuestions(shuffledQuestions)
+        }
       } catch (err) {
         if (!ignore) setError(err.message)
       } finally {
@@ -884,15 +911,22 @@ function StudentQuestions() {
                       </div>
 
                       {/* Options */}
-                      {Array.isArray(question.options) && question.options.length > 0 && (
+                      {((Array.isArray(question.jumbledOptions) && question.jumbledOptions.length > 0) ||
+                        (Array.isArray(question.options) && question.options.length > 0)) && (
                         <div className="space-y-3">
-                          {question.options.map((option, index) => {
-                            const isSelected = currentAnswer === index;
+                          {(
+                            question.jumbledOptions ||
+                            question.options.map((optText, origIdx) => ({
+                              text: optText,
+                              originalIndex: origIdx,
+                            }))
+                          ).map((optObj, index) => {
+                            const isSelected = currentAnswer === optObj.originalIndex;
                             return (
                               <div
                                 key={`${qId}-opt-${index}`}
                                 onClick={() => {
-                                  if (!isSubmitted) setAnswers(prev => ({ ...prev, [qId]: index }))
+                                  if (!isSubmitted) setAnswers(prev => ({ ...prev, [qId]: optObj.originalIndex }))
                                 }}
                                 className={`
                                        group flex cursor-pointer items-center gap-4 rounded-lg border-2 p-4 transition-all
@@ -908,7 +942,7 @@ function StudentQuestions() {
                                   {isSelected && <div className="h-3 w-3 rounded-full bg-blue-500" />}
                                 </div>
                                 <span className={`text-base font-medium ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>
-                                  {option}
+                                  {optObj.text}
                                 </span>
                               </div>
                             )
