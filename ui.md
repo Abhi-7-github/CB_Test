@@ -36,6 +36,7 @@ The design strictly employs the six core tokens from the Holst palette:
 * **Subtitles & Metadata**: Medium (`text-xs text-[#415A77]`).
 * **Question Content**: Regular / Medium with generous line height (`leading-relaxed text-[#0D1B2A]`).
 * **Labels**: Uppercase tracking-wider (`text-xs font-semibold uppercase tracking-wider`).
+* **Official Branding**: `CB-KARE.jpeg` is utilized as the primary logo emblem in the browser favicon, login portal badge, system readiness onboarding header, candidate exam navigation bar, and admin management console.
 
 ---
 
