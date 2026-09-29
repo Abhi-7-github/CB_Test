@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
 import { API_ENDPOINTS } from '../api'
-
 import { useNavigate } from 'react-router-dom'
 
 function shuffleArray(array) {
@@ -46,7 +45,7 @@ function StudentQuestions() {
   }, [isTestActive, hasStartedExam])
 
   useEffect(() => {
-    // Question loading & jumbling (shuffling questions and options)
+    // Question loading & jumbling
     let ignore = false
     const loadQuestions = async () => {
       try {
@@ -113,7 +112,6 @@ function StudentQuestions() {
       const track = stream.getVideoTracks()[0];
 
       const handleTrackEnded = () => {
-        // Use refs to check current status without stale closures
         if (hasStartedExamRef.current && !isSubmittedRef.current) {
           handleViolation('Screen sharing was stopped manually.')
         }
@@ -134,7 +132,6 @@ function StudentQuestions() {
     let intervalId = null
 
     const checkStatus = async () => {
-      // 1. Check if test was stopped by admin
       try {
         const res = await fetch(API_ENDPOINTS.testStatus, { cache: 'no-store' })
         if (!res.ok) {
@@ -152,9 +149,7 @@ function StudentQuestions() {
         setStatusChecked(true)
       }
 
-      // 2. Check if screen share is still active (Only if exam started)
       if (hasStartedExamRef.current && !isSubmittedRef.current) {
-        // Check if global stream object is valid
         const stream = window.__proctoringStreams?.screenStream;
         const isStreamActive = stream && stream.active && stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].readyState === 'live';
 
@@ -165,7 +160,7 @@ function StudentQuestions() {
     }
 
     checkStatus()
-    intervalId = setInterval(checkStatus, 2000) // Increased frequency for better security
+    intervalId = setInterval(checkStatus, 2000)
 
     return () => {
       if (intervalId) clearInterval(intervalId)
@@ -173,7 +168,6 @@ function StudentQuestions() {
   }, [])
 
   useEffect(() => {
-    // Keep preview flags in sync if streams appear later
     setHasScreenStream(!!window.__proctoringStreams?.screenStream)
   }, [])
 
@@ -181,7 +175,6 @@ function StudentQuestions() {
     const email = localStorage.getItem('studentEmail') || ''
     setStudentEmail(email)
 
-    // Check if system check passed
     const systemCheckPassed = localStorage.getItem('systemCheckPassed') === 'true'
     if (!systemCheckPassed) {
       navigate('/system-check', { replace: true })
@@ -199,10 +192,8 @@ function StudentQuestions() {
         })
         .catch((err) => console.warn('Failed to verify DB score on StudentQuestions mount:', err))
     }
-
   }, [])
 
-  // Refs for auto-submission to access latest state without re-binding listeners
   const answersRef = useRef(answers)
   const fileInputsRef = useRef(fileInputs)
   const isSubmittedRef = useRef(isSubmitted)
@@ -280,14 +271,7 @@ function StudentQuestions() {
     }
   }
 
-  const isDevToolsOpen = () => {
-    const widthGap = Math.abs(window.outerWidth - window.innerWidth)
-    const heightGap = Math.abs(window.outerHeight - window.innerHeight)
-    return widthGap > 160 || heightGap > 160
-  }
-
   const handleViolation = (reason) => {
-    // Only handle violations if the test is active AND the student has actually started the exam
     if (!isTestActiveRef.current || !hasStartedExamRef.current) return
     if (isSubmittedRef.current || autoSubmitTriggeredRef.current) return
 
@@ -297,13 +281,11 @@ function StudentQuestions() {
 
   // Anti-cheating & Security
   useEffect(() => {
-    // 1. Tab Switching / Window Blur (with grace period for system popups)
     const handleBlur = () => {
       if (!isSubmittedRef.current && !isFilePickerOpenRef.current) {
-        // Delay violation trigger to allow for quick interactions (like "Hide" sharing bar)
         blurTimeoutRef.current = setTimeout(() => {
           handleViolation('Tab switching or window focus lost.')
-        }, 5000) // 5 seconds grace period
+        }, 5000)
       }
     }
 
@@ -315,9 +297,7 @@ function StudentQuestions() {
       setTimeout(() => { isFilePickerOpenRef.current = false }, 1000)
     }
 
-    // 2. Fullscreen Exit Detection
     const handleFullscreenChange = () => {
-      // Only check if test is active AND started
       if (isTestActiveRef.current && hasStartedExamRef.current) {
         if (!getFullscreenElement() && !isSubmittedRef.current) {
           handleViolation('Fullscreen mode exited.')
@@ -328,7 +308,6 @@ function StudentQuestions() {
     window.addEventListener('blur', handleBlur)
     window.addEventListener('focus', handleFocus)
 
-    // 3. Prevent Back Navigation & Gestures
     const handlePopState = (e) => {
       e.preventDefault()
       window.history.pushState(null, null, window.location.href)
@@ -336,38 +315,30 @@ function StudentQuestions() {
     window.history.pushState(null, null, window.location.href)
     window.addEventListener('popstate', handlePopState)
 
-    // Prevent horizontal scroll/swipe gestures
     const preventSwipe = (e) => {
-      // Prevent 2-finger swipe back (horizontal scroll)
       if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
         e.preventDefault()
       }
     }
     window.addEventListener('wheel', preventSwipe, { passive: false })
-
-    // CSS to prevent swipe navigation
     document.body.style.overscrollBehaviorX = 'none'
 
-    // Key & Context Menu Proctoring Restrictions (Blocks Ctrl+I, Ctrl+A, Ctrl+V, Ctrl+J, Windows Key, etc.)
     const handleKeyDownRestrictions = (e) => {
       const key = e.key ? e.key.toLowerCase() : ''
       const isCtrlOrMeta = e.ctrlKey || e.metaKey
 
-      // Block Windows Key / Meta Key / OS Key
       if (e.key === 'Meta' || e.key === 'OS' || e.keyCode === 91 || e.keyCode === 92) {
         e.preventDefault()
         e.stopPropagation()
         return false
       }
 
-      // Block Ctrl+I, Ctrl+A, Ctrl+V, Ctrl+J, Ctrl+C, Ctrl+U, Ctrl+S, Ctrl+P
       if (isCtrlOrMeta && ['i', 'a', 'v', 'j', 'c', 'u', 's', 'p'].includes(key)) {
         e.preventDefault()
         e.stopPropagation()
         return false
       }
 
-      // Block F12 DevTools
       if (e.key === 'F12' || e.keyCode === 123) {
         e.preventDefault()
         e.stopPropagation()
@@ -383,7 +354,6 @@ function StudentQuestions() {
 
     window.addEventListener('keydown', handleKeyDownRestrictions, true)
     window.addEventListener('contextmenu', handleContextMenuRestrictions, true)
-
     document.addEventListener('fullscreenchange', handleFullscreenChange)
     document.addEventListener('webkitfullscreenchange', handleFullscreenChange)
     document.addEventListener('mozfullscreenchange', handleFullscreenChange)
@@ -392,6 +362,8 @@ function StudentQuestions() {
     return () => {
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('wheel', preventSwipe)
       window.removeEventListener('keydown', handleKeyDownRestrictions, true)
       window.removeEventListener('contextmenu', handleContextMenuRestrictions, true)
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
@@ -403,60 +375,67 @@ function StudentQuestions() {
 
   if (loading || !statusChecked) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="mb-4 h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600 mx-auto"></div>
-          <p className="text-sm font-medium text-slate-500">Loading assessment...</p>
+      <div className="flex h-screen w-full items-center justify-center bg-[#F4F1DE]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-3 border-[#D4C4A8] border-t-[#0D1B2A]"></div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-[#415A77]">Preparing Examination Session...</p>
         </div>
       </div>
     )
   }
 
+  // Pre-test: Waiting for Admin to Begin
   if (!isTestActive && !isSubmitted) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 px-4 text-center">
-        <div className="max-w-md rounded-2xl bg-white p-10 shadow-xl ring-1 ring-slate-900/5">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-indigo-100">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-600"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-[#F4F1DE] px-4 text-center">
+        <div className="w-full max-w-md rounded-2xl border border-[#0D1B2A]/10 bg-[#FFFFFF] p-8 shadow-sm">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EDF2EE] text-[#415A77] border border-[#778D7A]/30">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
           </div>
-          <h1 className="mb-3 text-2xl font-bold text-slate-900">Waiting for Exam to Start</h1>
-          <p className="text-slate-500 mb-8">
-            The assessment has not been started by the administrator yet.<br />
-            Please wait, the page will refresh automatically.
+          <h1 className="mb-2 text-xl font-bold tracking-tight text-[#0D1B2A]">Waiting for Invigilator to Start</h1>
+          <p className="text-xs leading-relaxed text-[#415A77] mb-6">
+            The assessment has not yet been unlocked by the examination administrator.<br />
+            Please remain on this screen. The session will automatically activate.
           </p>
-          <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-400 uppercase tracking-wider">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-            </span>
-            Live Status Check
+          <div className="inline-flex items-center gap-2 rounded-full border border-[#D4C4A8]/60 bg-[#F7F3EA] px-3.5 py-1.5 text-[11px] font-semibold text-[#415A77]">
+            <span className="h-2 w-2 rounded-full bg-[#778D7A] animate-pulse"></span>
+            <span>Live Session Listener Active</span>
           </div>
         </div>
       </div>
     )
   }
 
-  // New Block: Test is Active, but Student hasn't explicitly started (clicked the button to enter fullscreen/set state)
+  // Pre-test: Admin has started, student confirms and enters fullscreen
   if (isTestActive && !hasStartedExam && !isSubmitted) {
     return (
-      <div className="flex h-screen w-full flex-col items-center justify-center bg-slate-50 px-4 text-center">
-        <div className="max-w-md rounded-2xl bg-white p-10 shadow-xl ring-1 ring-slate-900/5">
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">
-            <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><polyline points="22 4 12 14.01 9 11.01" /></svg>
+      <div className="flex h-screen w-full flex-col items-center justify-center bg-[#F4F1DE] px-4 text-center">
+        <div className="w-full max-w-md rounded-2xl border border-[#0D1B2A]/10 bg-[#FFFFFF] p-8 shadow-sm">
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EDF2EE] text-[#778D7A] border border-[#778D7A]/40">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+              <polyline points="22 4 12 14.01 9 11.01" />
+            </svg>
           </div>
-          <h1 className="mb-3 text-2xl font-bold text-slate-900">Assessment Ready</h1>
-          <p className="text-slate-500 mb-8">
-            The assessment is live. Click the button below to enter fullscreen mode and begin.<br />
-            <span className="text-rose-500 text-xs font-bold mt-2 block">Note: Exiting fullscreen will trigger an auto-submission.</span>
+          <h1 className="mb-2 text-xl font-bold tracking-tight text-[#0D1B2A]">Assessment Unlocked</h1>
+          <p className="text-xs leading-relaxed text-[#415A77] mb-6">
+            The examination is now active. Click below to enter full-screen mode and initiate your timer.
+            <span className="mt-2 block font-semibold text-[#9E2A2B]">
+              Notice: Leaving full-screen or switching tabs will trigger immediate auto-submission.
+            </span>
           </p>
           <button
+            type="button"
             onClick={() => {
               enterFullscreen()
               setHasStartedExam(true)
             }}
-            className="w-full rounded-lg bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-lg hover:bg-emerald-700 transition-transform active:scale-95"
+            className="w-full rounded-xl bg-[#0D1B2A] py-3 text-sm font-semibold text-[#F4F1DE] shadow-xs transition-colors duration-200 hover:bg-[#1B263B] active:scale-[0.99]"
           >
-            Start Assessment
+            Start Assessment & Enter Fullscreen
           </button>
         </div>
       </div>
@@ -464,7 +443,13 @@ function StudentQuestions() {
   }
 
   if (error) {
-    return <p className="text-sm text-rose-600">{error}</p>
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-[#F4F1DE] p-4">
+        <div className="rounded-xl border border-[#9E2A2B]/20 bg-[#FBEAEA] p-4 text-xs font-semibold text-[#782828]">
+          {error}
+        </div>
+      </div>
+    )
   }
 
   const handleFileChange = (questionId, file) => {
@@ -485,19 +470,19 @@ function StudentQuestions() {
     if (!file) {
       setUploadStatus((prev) => ({
         ...prev,
-        [questionId]: { type: 'error', message: 'Please choose a file.' },
+        [questionId]: { type: 'error', message: 'Please choose a file to upload.' },
       }))
       return
     }
 
     setUploadStatus((prev) => ({
       ...prev,
-      [questionId]: { type: 'loading', message: 'Uploading...' },
+      [questionId]: { type: 'loading', message: 'Uploading document...' },
     }))
 
     const formData = new FormData()
     formData.append('file', file)
-    formData.append('studentEmail', 'student@klu.ac.in')
+    formData.append('studentEmail', studentEmail || 'student@klu.ac.in')
 
     try {
       const response = await fetch(API_ENDPOINTS.submissions(questionId), {
@@ -511,7 +496,7 @@ function StudentQuestions() {
 
       setUploadStatus((prev) => ({
         ...prev,
-        [questionId]: { type: 'success', message: 'File uploaded.' },
+        [questionId]: { type: 'success', message: 'File successfully uploaded.' },
       }))
       setFileInputs((prev) => ({ ...prev, [questionId]: null }))
     } catch (err) {
@@ -535,13 +520,11 @@ function StudentQuestions() {
     }
 
     if (currentIsSubmitted) {
-      // If already submitted, just return
       return
     }
 
     if (!forced) {
       if (!skipConfirm) {
-        // Calculate answered questions count
         const answeredIds = new Set([
           ...Object.keys(currentAnswers),
           ...Object.keys(currentFileInputs).filter(id => currentFileInputs[id])
@@ -549,22 +532,20 @@ function StudentQuestions() {
         const count = answeredIds.size
         const total = questions.length
 
-        if (!window.confirm(`Do you want to submit the test?\n\nAttempted: ${count}\nTotal: ${total}`)) {
+        if (!window.confirm(`Do you want to submit the assessment?\n\nAttempted: ${count}\nTotal Questions: ${total}`)) {
           return
         }
       }
     } else {
-      const alertMessage = reason || 'Fullscreen mode exited. Auto-submitting test.'
+      const alertMessage = reason || 'Security violation detected. Auto-submitting test.'
       alert(alertMessage)
     }
 
     setSubmitStatus({
       type: 'loading',
       message: forced
-        ? reason
-          ? `Auto-submitting: ${reason}`
-          : 'Auto-submitting due to fullscreen exit...'
-        : 'Submitting...',
+        ? reason ? `Auto-submitting: ${reason}` : 'Auto-submitting session...'
+        : 'Submitting assessment...',
     })
 
     try {
@@ -682,18 +663,28 @@ function StudentQuestions() {
   }
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans text-slate-900">
-      {/* LEFT SIDEBAR - QUESTION PANEL */}
-      <aside className="flex w-64 flex-col border-r border-slate-200 bg-white shadow-sm hidden md:flex z-10">
-        {/* MONITORING PANEL */}
-        <div className="p-4 border-b border-slate-100">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-3">Monitoring</h2>
+    <div className="flex h-screen w-full bg-[#F4F1DE] font-sans text-[#0D1B2A] overflow-hidden select-none">
+      
+      {/* 1. LEFT NAVIGATION: Deep navy / dark navy accents & Question Palette */}
+      <aside className="hidden md:flex w-72 flex-col border-r border-[#0D1B2A]/10 bg-[#FAF8F2] shadow-2xs z-20">
+        
+        {/* Monitoring Panel */}
+        <div className="p-4 border-b border-[#0D1B2A]/10">
+          <div className="flex items-center justify-between mb-2.5">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#415A77]">
+              Proctoring Monitor
+            </span>
+            <span className="flex items-center gap-1.5 text-[10px] font-semibold text-[#778D7A]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#778D7A] animate-pulse" />
+              Recording
+            </span>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
-            {/* Camera & Mic */}
-            <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
+            {/* Camera Preview */}
+            <div className="relative aspect-video overflow-hidden rounded-xl bg-[#0D1B2A] border border-[#1B263B] shadow-inner">
               <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" /><circle cx="12" cy="13" r="4" /></svg>
-                <span className="text-[8px] font-bold text-white uppercase tracking-wider shadow-black drop-shadow-md">Camera</span>
+                <span className="text-[9px] font-bold text-[#D4C4A8] uppercase tracking-wider">Camera</span>
               </div>
               {hasCameraStream ? (
                 <video
@@ -708,16 +699,17 @@ function StudentQuestions() {
                   className="h-full w-full object-cover opacity-90"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-[8px] text-slate-400">Off</div>
+                <div className="flex h-full items-center justify-center text-[9px] text-[#415A77]">Standby</div>
               )}
-              {hasCameraStream && <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-500 border border-white animate-pulse shadow-sm" />}
+              {hasCameraStream && (
+                <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#778D7A] border border-[#0D1B2A]" />
+              )}
             </div>
 
-            {/* Screen */}
-            <div className="relative aspect-video overflow-hidden rounded-lg bg-slate-900 border border-slate-200 shadow-sm">
+            {/* Screen Preview */}
+            <div className="relative aspect-video overflow-hidden rounded-xl bg-[#0D1B2A] border border-[#1B263B] shadow-inner">
               <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
-                <svg xmlns="http://www.w3.org/2000/svg" width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-white"><rect x="2" y="3" width="20" height="14" rx="2" ry="2" /><line x1="8" y1="21" x2="16" y2="21" /><line x1="12" y1="17" x2="12" y2="21" /></svg>
-                <span className="text-[8px] font-bold text-white uppercase tracking-wider shadow-black drop-shadow-md">Screen</span>
+                <span className="text-[9px] font-bold text-[#D4C4A8] uppercase tracking-wider">Screen</span>
               </div>
               {hasScreenStream ? (
                 <video
@@ -733,49 +725,60 @@ function StudentQuestions() {
                   className="h-full w-full object-cover opacity-90"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-[8px] text-slate-400">Off</div>
+                <div className="flex h-full items-center justify-center text-[9px] text-[#415A77]">Standby</div>
               )}
-              {hasScreenStream && <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-500 border border-white animate-pulse shadow-sm" />}
+              {hasScreenStream && (
+                <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#778D7A] border border-[#0D1B2A]" />
+              )}
             </div>
           </div>
         </div>
 
-        <div className="p-4 border-b border-slate-100">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">
-            Question Panel
-          </h2>
+        {/* Question Palette Header */}
+        <div className="px-4 py-3 border-b border-[#0D1B2A]/10 bg-[#FAF8F2]">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-[#0D1B2A]">
+              Question Palette
+            </h2>
+            <span className="text-[11px] font-medium text-[#415A77]">
+              {questions.length} Items
+            </span>
+          </div>
         </div>
 
+        {/* Question Palette Matrix */}
         <div className="flex-1 overflow-y-auto p-4">
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-4 gap-2.5">
             {questions.map((q, index) => {
               const qId = q._id || q.id || index;
               const isCurrent = index === currentQuestionIndex;
               const isAnswered = answers[qId] !== undefined || fileInputs[qId];
               const isReview = markedForReview[qId];
 
-              let btnClass = "bg-white border text-slate-600 hover:bg-slate-50"; // Default
+              // Holst palette question statuses:
+              // Current → #415A77
+              // Answered → #778D7A
+              // Mark for review → #D4C4A8
+              // Answered + review → dark navy (#1B263B) with beige indicator
+              // Unattempted → muted neutral border
+              let btnStyle = "bg-white text-[#415A77] border border-[#0D1B2A]/15 hover:bg-[#FAF8F2]";
 
               if (isCurrent) {
-                btnClass = "border-blue-500 text-blue-600 ring-1 ring-blue-500 bg-blue-50 font-bold";
+                btnStyle = "border-2 border-[#415A77] bg-[#415A77]/10 text-[#0D1B2A] font-bold shadow-2xs";
               } else if (isReview && isAnswered) {
-                btnClass = "border-purple-500 text-purple-600 bg-purple-50";
+                btnStyle = "bg-[#1B263B] text-[#F4F1DE] border-2 border-[#D4C4A8] font-semibold";
               } else if (isReview) {
-                btnClass = "border-orange-500 text-orange-600 bg-orange-50";
+                btnStyle = "bg-[#D4C4A8] text-[#0D1B2A] border border-[#D4C4A8] font-semibold";
               } else if (isAnswered) {
-                btnClass = "border-emerald-500 text-emerald-600 bg-emerald-50";
-              } else {
-                btnClass = "border-slate-200";
+                btnStyle = "bg-[#778D7A] text-[#F4F1DE] border border-[#778D7A] font-semibold";
               }
 
               return (
                 <button
                   key={qId}
+                  type="button"
                   onClick={() => setCurrentQuestionIndex(index)}
-                  className={`
-                    flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-all shadow-sm
-                    ${btnClass}
-                  `}
+                  className={`flex h-10 w-10 items-center justify-center rounded-xl text-xs transition-all duration-150 ${btnStyle}`}
                 >
                   {index + 1}
                 </button>
@@ -784,112 +787,130 @@ function StudentQuestions() {
           </div>
         </div>
 
-        {/* Legend */}
-        <div className="border-t border-slate-100 p-4 text-xs font-medium text-slate-600 space-y-2">
+        {/* Compact Status Legend */}
+        <div className="border-t border-[#0D1B2A]/10 bg-[#FAF8F2] p-4 text-[11px] font-medium text-[#415A77] space-y-2">
           <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-blue-500"></span> Current
+            <span className="h-3 w-3 rounded-md border-2 border-[#415A77] bg-[#415A77]/20" />
+            <span>Current</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-emerald-500"></span> Answered
+            <span className="h-3 w-3 rounded-md bg-[#778D7A]" />
+            <span>Answered</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-orange-500"></span> Review
+            <span className="h-3 w-3 rounded-md bg-[#D4C4A8]" />
+            <span>Marked for review</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-purple-500"></span> Both
+            <span className="h-3 w-3 rounded-md bg-[#1B263B] border border-[#D4C4A8]" />
+            <span>Answered & Review</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="h-3 w-3 rounded-md border border-[#0D1B2A]/20 bg-white" />
+            <span>Unattempted</span>
           </div>
         </div>
       </aside>
 
-      {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden relative">
-
+      {/* 2. MAIN VIEWPORT */}
+      <main className="flex-1 flex flex-col h-screen overflow-hidden">
+        
         {/* TOP HEADER */}
-        <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6 shadow-sm z-10">
-          <div className="flex items-center gap-4">
-            <h1 className="text-lg font-bold text-slate-900">Event Assessment</h1>
-            <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-              Question {currentQuestionIndex + 1} / {questions.length}
+        <header className="flex h-16 shrink-0 items-center justify-between border-b border-[#0D1B2A]/10 bg-[#FAF8F2] px-6 z-10">
+          <div className="flex items-center gap-3">
+            <img
+              src="/CB-KARE.jpeg"
+              alt="CB-KARE Logo"
+              className="h-8 w-auto rounded-md object-contain border border-[#0D1B2A]/10"
+            />
+            <span className="font-bold text-sm tracking-tight text-[#0D1B2A]">
+              CB-KARE Examination
+            </span>
+            <span className="rounded-lg border border-[#0D1B2A]/10 bg-white px-2.5 py-1 text-xs font-semibold text-[#415A77]">
+              Question {currentQuestionIndex + 1} of {questions.length}
             </span>
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 shadow-sm">
-              <div className="text-xs">
-                <div className="font-semibold text-slate-800">{studentEmail || 'Unknown email'}</div>
-                <div className="text-[10px] uppercase tracking-wider text-slate-500">Student</div>
-              </div>
-              <div className="h-8 w-px bg-slate-200" />
+            {/* Student Chip */}
+            <div className="hidden sm:flex items-center gap-2 rounded-xl border border-[#0D1B2A]/10 bg-white px-3 py-1.5">
               <div className="text-right">
-                <div className="text-[10px] uppercase tracking-wider text-slate-500">Time Left</div>
-                <div className={`text-sm font-bold ${remainingSeconds <= 60 ? 'text-rose-600' : 'text-slate-900'}`}>
-                  {formatTime(remainingSeconds)}
-                </div>
+                <div className="text-xs font-bold text-[#0D1B2A] max-w-[140px] truncate">{studentEmail || 'student@klu.ac.in'}</div>
+                <div className="text-[10px] text-[#415A77] uppercase tracking-wider">Candidate</div>
               </div>
             </div>
 
+            {/* Timer */}
+            <div className="flex items-center gap-2 rounded-xl border border-[#0D1B2A]/10 bg-white px-3.5 py-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={remainingSeconds <= 60 ? 'text-[#9E2A2B]' : 'text-[#415A77]'}>
+                <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+              </svg>
+              <div>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-[#415A77] block leading-none">Time Left</span>
+                <span className={`text-sm font-bold tracking-wider ${remainingSeconds <= 60 ? 'text-[#9E2A2B] animate-pulse' : 'text-[#0D1B2A]'}`}>
+                  {formatTime(remainingSeconds)}
+                </span>
+              </div>
+            </div>
+
+            {/* Finish Button */}
             <button
               type="button"
               onClick={() => setShowFinishModal(true)}
-              className="rounded-md bg-slate-900 px-5 py-2 text-sm font-bold text-white shadow-md hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-transform active:scale-95"
               disabled={isSubmitted}
+              className="rounded-xl bg-[#0D1B2A] px-4 py-2 text-xs font-semibold text-[#F4F1DE] shadow-xs transition-colors duration-200 hover:bg-[#1B263B] active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Finish Assessment
             </button>
           </div>
         </header>
 
-        {/* QUESTION AREA */}
-        <div className="flex-1 overflow-y-auto p-4 bg-slate-50/50">
-
-
-          {/* Alerts */}
+        {/* 3. MAIN QUESTION WORKSPACE */}
+        <div className="flex-1 overflow-y-auto p-4 md:p-8 bg-[#F4F1DE]">
+          
           {submitStatus.message && !isSubmitted && submitStatus.type === 'error' && (
-            <div className="w-full mb-6 p-4 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 shadow-sm">
+            <div className="mb-4 rounded-xl border border-[#9E2A2B]/20 bg-[#FBEAEA] p-3.5 text-xs font-semibold text-[#782828]">
               {submitStatus.message}
             </div>
           )}
 
           {questions.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-slate-400">
-              <svg className="h-12 w-12 mb-2 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p>No questions loaded.</p>
+            <div className="flex h-full flex-col items-center justify-center text-[#415A77]">
+              <p className="text-sm">No assessment questions loaded.</p>
             </div>
           ) : (
-            <div className="w-full h-full flex flex-col">
-              {/* Controls Bar */}
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-                <label className="flex cursor-pointer items-center gap-2 select-none">
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      className="peer h-5 w-5 cursor-pointer appearance-none rounded border border-slate-300 shadow-sm transition-all checked:border-indigo-500 checked:bg-indigo-500 hover:border-indigo-400"
-                      checked={(() => {
-                        const q = questions[currentQuestionIndex];
-                        return q && markedForReview[(q._id || q.id || currentQuestionIndex)];
-                      })() || false}
-                      onChange={() => {
-                        const q = questions[currentQuestionIndex];
-                        if (!q) return;
-                        const qId = q._id || q.id || currentQuestionIndex;
-                        setMarkedForReview(prev => ({
-                          ...prev,
-                          [qId]: !prev[qId]
-                        }))
-                      }}
-                    />
-                    <svg className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-white opacity-0 transition-opacity peer-checked:opacity-100" width="12" height="12" viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-medium text-slate-600">Mark for review</span>
+            <div className="mx-auto max-w-4xl">
+              
+              {/* Question Control Ribbon */}
+              <div className="mb-4 flex items-center justify-between">
+                <label className="flex cursor-pointer items-center gap-2 select-none rounded-xl border border-[#0D1B2A]/10 bg-white px-3.5 py-1.5 shadow-2xs hover:bg-[#FAF8F2] transition-colors">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-[#0D1B2A]/20 text-[#415A77] focus:ring-0 accent-[#415A77]"
+                    checked={(() => {
+                      const q = questions[currentQuestionIndex];
+                      return q && markedForReview[(q._id || q.id || currentQuestionIndex)];
+                    })() || false}
+                    onChange={() => {
+                      const q = questions[currentQuestionIndex];
+                      if (!q) return;
+                      const qId = q._id || q.id || currentQuestionIndex;
+                      setMarkedForReview(prev => ({
+                        ...prev,
+                        [qId]: !prev[qId]
+                      }))
+                    }}
+                  />
+                  <span className="text-xs font-semibold text-[#415A77]">Mark for Review</span>
                 </label>
 
-                <div className="flex items-center gap-2">
-                  <span className="rounded border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-sm font-bold text-emerald-600 shadow-sm">+1</span>
-                  <span className="rounded border border-rose-200 bg-rose-50 px-2.5 py-1 text-sm font-bold text-rose-600 shadow-sm">0</span>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="rounded-lg border border-[#778D7A]/30 bg-[#EDF2EE] px-2.5 py-1 font-bold text-[#415A77]">
+                    +1.0 Marks
+                  </span>
+                  <span className="rounded-lg border border-[#D4C4A8]/60 bg-[#F7F3EA] px-2.5 py-1 font-bold text-[#415A77]">
+                    0.0 Negative
+                  </span>
                 </div>
               </div>
 
@@ -901,143 +922,146 @@ function StudentQuestions() {
                 const currentAnswer = answers[qId];
 
                 return (
-                  <article className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all">
-                    <div className="p-6 md:p-8">
-                      <div className="mb-6">
-                        <p className="text-sm font-medium text-slate-500 mb-2">Question {currentQuestionIndex + 1} of {questions.length}</p>
-                        <h2 className="text-xl md:text-2xl font-semibold text-slate-900 leading-snug">
-                          {question.text}
-                        </h2>
-                      </div>
-
-                      {/* Options */}
-                      {((Array.isArray(question.jumbledOptions) && question.jumbledOptions.length > 0) ||
-                        (Array.isArray(question.options) && question.options.length > 0)) && (
-                        <div className="space-y-3">
-                          {(
-                            question.jumbledOptions ||
-                            question.options.map((optText, origIdx) => ({
-                              text: optText,
-                              originalIndex: origIdx,
-                            }))
-                          ).map((optObj, index) => {
-                            const isSelected = currentAnswer === optObj.originalIndex;
-                            return (
-                              <div
-                                key={`${qId}-opt-${index}`}
-                                onClick={() => {
-                                  if (!isSubmitted) setAnswers(prev => ({ ...prev, [qId]: optObj.originalIndex }))
-                                }}
-                                className={`
-                                       group flex cursor-pointer items-center gap-4 rounded-lg border-2 p-4 transition-all
-                                       ${isSelected
-                                    ? 'border-blue-500 bg-blue-50/50'
-                                    : 'border-slate-100 bg-white hover:border-slate-200 hover:bg-slate-50'}
-                                    `}
-                              >
-                                <div className={`
-                                        flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 transition-all
-                                        ${isSelected ? 'border-blue-500' : 'border-slate-300 group-hover:border-slate-400'}
-                                     `}>
-                                  {isSelected && <div className="h-3 w-3 rounded-full bg-blue-500" />}
-                                </div>
-                                <span className={`text-base font-medium ${isSelected ? 'text-slate-900' : 'text-slate-700'}`}>
-                                  {optObj.text}
-                                </span>
-                              </div>
-                            )
-                          })}
-                        </div>
-                      )}
-
-                      {/* File Upload Type - Styling match */}
-                      {question.type === 'file' && (
-                        <div className="rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-                          <p className="text-slate-600 mb-4">Upload your response for this question.</p>
-                          <div className="flex flex-col items-center gap-4">
-                            <input
-                              type="file"
-                              accept={question.fileUpload?.accept?.join(',') || undefined}
-                              onChange={(event) =>
-                                handleFileChange(qId, event.target.files?.[0] || null)
-                              }
-                              onClick={() => { isFilePickerOpenRef.current = true }}
-                              className="file:mr-4 file:py-2.5 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 text-sm text-slate-500"
-                              disabled={isSubmitted}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleUpload(question)}
-                              className="rounded-full bg-slate-900 px-6 py-2 text-sm font-bold text-white shadow-md transition-transform active:scale-95"
-                              disabled={isSubmitted}
-                            >
-                              Upload Answer
-                            </button>
-                            {uploadStatus[qId] && (
-                              <div className={`mt-2 text-sm font-bold ${uploadStatus[qId].type === 'success' ? 'text-emerald-600' :
-                                uploadStatus[qId].type === 'loading' ? 'text-blue-600' : 'text-rose-600'
-                                }`}>
-                                {uploadStatus[qId].message}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Clear Response */}
-                      <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-between">
-                        <button
-                          onClick={() => {
-                            if (isSubmitted) return;
-                            setAnswers(prev => {
-                              const next = { ...prev };
-                              delete next[qId];
-                              return next;
-                            });
-                            setFileInputs(prev => {
-                              const next = { ...prev };
-                              delete next[qId];
-                              return next;
-                            });
-                          }}
-                          disabled={isSubmitted}
-                          className="group flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-rose-600 transition-colors disabled:opacity-50"
-                        >
-                          <span className="flex h-4 w-4 items-center justify-center rounded border border-slate-300 group-hover:border-rose-400 bg-white shadow-sm">
-                            {/* Dummy checkbox look */}
-                          </span>
-                          Clear Response
-                        </button>
-
-                        {/* Nav Buttons integrated here for better flow */}
-                        <div className="flex items-center gap-4">
-                          <button
-                            onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
-                            disabled={currentQuestionIndex === 0}
-                            className="px-4 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 disabled:opacity-50"
-                          >
-                            Previous
-                          </button>
-                          <button
-                            onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
-                            disabled={currentQuestionIndex === questions.length - 1}
-                            className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white shadow hover:bg-indigo-700 disabled:opacity-50"
-                          >
-                            Next
-                          </button>
-                        </div>
-                      </div>
-
+                  <article className="rounded-2xl border border-[#0D1B2A]/10 bg-white p-6 md:p-8 shadow-xs">
+                    
+                    {/* Prompt Header */}
+                    <div className="mb-6">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-[#415A77] mb-1.5 block">
+                        Question {currentQuestionIndex + 1}
+                      </span>
+                      <h2 className="text-lg md:text-xl font-semibold leading-relaxed text-[#0D1B2A]">
+                        {question.text}
+                      </h2>
                     </div>
+
+                    {/* MCQ Options List */}
+                    {((Array.isArray(question.jumbledOptions) && question.jumbledOptions.length > 0) ||
+                      (Array.isArray(question.options) && question.options.length > 0)) && (
+                      <div className="space-y-3">
+                        {(
+                          question.jumbledOptions ||
+                          question.options.map((optText, origIdx) => ({
+                            text: optText,
+                            originalIndex: origIdx,
+                          }))
+                        ).map((optObj, index) => {
+                          const isSelected = currentAnswer === optObj.originalIndex;
+                          return (
+                            <div
+                              key={`${qId}-opt-${index}`}
+                              onClick={() => {
+                                if (!isSubmitted) setAnswers(prev => ({ ...prev, [qId]: optObj.originalIndex }))
+                              }}
+                              className={`flex cursor-pointer items-center gap-3.5 rounded-xl border p-4 transition-all duration-150 ${
+                                isSelected
+                                  ? 'border-[#415A77] bg-[#415A77]/5 text-[#0D1B2A]'
+                                  : 'border-[#0D1B2A]/10 bg-white hover:border-[#415A77]/30 hover:bg-[#FAF8F2] text-[#415A77]'
+                              }`}
+                            >
+                              <div
+                                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-all ${
+                                  isSelected ? 'border-[#415A77]' : 'border-[#0D1B2A]/20'
+                                }`}
+                              >
+                                {isSelected && <div className="h-2.5 w-2.5 rounded-full bg-[#415A77]" />}
+                              </div>
+                              <span className="text-sm font-medium leading-relaxed">
+                                {optObj.text}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+
+                    {/* File Upload Question Type */}
+                    {question.type === 'file' && (
+                      <div className="rounded-xl border border-dashed border-[#0D1B2A]/20 bg-[#FAF8F2] p-6 text-center">
+                        <p className="text-xs text-[#415A77] mb-3">Upload your document response for this question.</p>
+                        <div className="flex flex-col items-center gap-3">
+                          <input
+                            type="file"
+                            accept={question.fileUpload?.accept?.join(',') || undefined}
+                            onChange={(event) =>
+                              handleFileChange(qId, event.target.files?.[0] || null)
+                            }
+                            onClick={() => { isFilePickerOpenRef.current = true }}
+                            className="text-xs text-[#415A77] file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0D1B2A] file:text-[#F4F1DE] hover:file:bg-[#1B263B]"
+                            disabled={isSubmitted}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleUpload(question)}
+                            className="rounded-xl bg-[#0D1B2A] px-5 py-2 text-xs font-semibold text-[#F4F1DE] shadow-xs hover:bg-[#1B263B] transition-colors"
+                            disabled={isSubmitted}
+                          >
+                            Upload File Response
+                          </button>
+                          {uploadStatus[qId] && (
+                            <div className={`text-xs font-semibold mt-1 ${
+                              uploadStatus[qId].type === 'success' ? 'text-[#778D7A]' :
+                              uploadStatus[qId].type === 'loading' ? 'text-[#415A77]' : 'text-[#9E2A2B]'
+                            }`}>
+                              {uploadStatus[qId].message}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bottom Question Controls */}
+                    <div className="mt-8 pt-6 border-t border-[#0D1B2A]/10 flex flex-wrap items-center justify-between gap-4">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (isSubmitted) return;
+                          setAnswers(prev => {
+                            const next = { ...prev };
+                            delete next[qId];
+                            return next;
+                          });
+                          setFileInputs(prev => {
+                            const next = { ...prev };
+                            delete next[qId];
+                            return next;
+                          });
+                        }}
+                        disabled={isSubmitted}
+                        className="text-xs font-semibold text-[#415A77] hover:text-[#9E2A2B] transition-colors disabled:opacity-50"
+                      >
+                        Clear Response
+                      </button>
+
+                      <div className="flex items-center gap-2.5">
+                        <button
+                          type="button"
+                          onClick={() => setCurrentQuestionIndex(prev => Math.max(0, prev - 1))}
+                          disabled={currentQuestionIndex === 0}
+                          className="rounded-xl border border-[#0D1B2A]/15 bg-white px-4 py-2 text-xs font-semibold text-[#415A77] hover:bg-[#FAF8F2] hover:text-[#0D1B2A] disabled:opacity-40 transition-colors"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setCurrentQuestionIndex(prev => Math.min(questions.length - 1, prev + 1))}
+                          disabled={currentQuestionIndex === questions.length - 1}
+                          className="rounded-xl bg-[#0D1B2A] px-5 py-2 text-xs font-semibold text-[#F4F1DE] hover:bg-[#1B263B] disabled:opacity-40 transition-colors"
+                        >
+                          Next Question
+                        </button>
+                      </div>
+                    </div>
+
                   </article>
                 );
               })()}
+
             </div>
           )}
         </div>
       </main>
 
-      {/* Custom Finish Assessment Modal */}
+      {/* Confirmation Modal */}
       {showFinishModal && (() => {
         const answeredCount = new Set([
           ...Object.keys(answers),
@@ -1048,80 +1072,100 @@ function StudentQuestions() {
         const progress = totalQuestions > 0 ? (answeredCount / totalQuestions) * 100 : 0
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-            <div className="w-full max-w-lg overflow-hidden rounded-xl bg-white shadow-2xl">
-              {/* Header */}
-              <div className="flex items-center justify-between p-6 pb-2">
-                <h3 className="text-xl font-bold text-slate-900">Finish Assessment?</h3>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D1B2A]/40 p-4">
+            <div className="w-full max-w-md rounded-2xl border border-[#0D1B2A]/10 bg-white p-6 shadow-xl">
+              
+              <div className="flex items-center justify-between pb-3 border-b border-[#0D1B2A]/10">
+                <h3 className="text-base font-bold text-[#0D1B2A]">Confirm Assessment Submission</h3>
                 <button
+                  type="button"
                   onClick={() => setShowFinishModal(false)}
-                  className="rounded-full p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600 transition-colors"
+                  className="rounded-lg p-1 text-[#415A77] hover:bg-[#FAF8F2]"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
                 </button>
               </div>
 
-              {/* Body */}
-              <div className="px-6 py-4">
-                <p className="text-sm font-medium text-slate-600 mb-3">Total Questions: <span className="text-slate-900 font-bold">{totalQuestions}</span></p>
+              <div className="py-4 space-y-4">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-[#415A77]">Completion Progress</span>
+                  <span className="font-bold text-[#0D1B2A]">{Math.round(progress)}%</span>
+                </div>
 
-                {/* Progress Bar */}
-                <div className="h-6 w-full bg-blue-100 border border-blue-200 overflow-hidden mb-4 relative">
+                <div className="h-2 w-full overflow-hidden rounded-full bg-[#F7F3EA] border border-[#0D1B2A]/10">
                   <div
-                    className="h-full bg-blue-600 transition-all duration-500 ease-out"
+                    className="h-full bg-[#778D7A] transition-all duration-300"
                     style={{ width: `${progress}%` }}
-                  ></div>
+                  />
                 </div>
 
-                <div className="flex items-center justify-between text-base font-medium mb-6">
-                  <div className="flex flex-col">
-                    <span className="text-slate-500 text-sm">Answered</span>
-                    <span className="text-2xl font-bold text-slate-900">{answeredCount}</span>
+                <div className="grid grid-cols-2 gap-3 text-center pt-2">
+                  <div className="rounded-xl border border-[#778D7A]/30 bg-[#EDF2EE] p-3">
+                    <span className="text-[11px] font-semibold text-[#415A77] uppercase tracking-wider block">Answered</span>
+                    <span className="text-xl font-bold text-[#0D1B2A]">{answeredCount}</span>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-slate-500 text-sm">Unanswered</span>
-                    <span className="text-2xl font-bold text-slate-900">{unansweredCount}</span>
+                  <div className="rounded-xl border border-[#D4C4A8]/40 bg-[#F7F3EA] p-3">
+                    <span className="text-[11px] font-semibold text-[#415A77] uppercase tracking-wider block">Unanswered</span>
+                    <span className="text-xl font-bold text-[#0D1B2A]">{unansweredCount}</span>
                   </div>
                 </div>
 
-                {/* Footer */}
-                <div className="flex justify-center pt-2">
+                <p className="text-[11px] text-[#415A77] text-center leading-relaxed">
+                  Once submitted, responses are committed to the examination registry and cannot be altered.
+                </p>
+
+                <div className="flex gap-2.5 pt-2">
                   <button
+                    type="button"
+                    onClick={() => setShowFinishModal(false)}
+                    className="flex-1 rounded-xl border border-[#0D1B2A]/15 bg-white py-2.5 text-xs font-semibold text-[#415A77] hover:bg-[#FAF8F2]"
+                  >
+                    Return to Test
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => {
                       setShowFinishModal(false)
                       handleSubmitTest(false, { skipConfirm: true })
                     }}
-                    className="w-full rounded-none bg-black py-4 text-base font-bold text-white shadow-lg hover:bg-slate-800 transition-all active:scale-[0.99] flex items-center justify-center gap-2"
+                    className="flex-1 rounded-xl bg-[#0D1B2A] py-2.5 text-xs font-semibold text-[#F4F1DE] hover:bg-[#1B263B] shadow-xs"
                   >
-                    Yes, Finish Assessment
+                    Confirm Submission
                   </button>
                 </div>
               </div>
+
             </div>
           </div>
         )
       })()}
-      {/* Success Card Modal - Shown when isSubmitted is true */}
+
+      {/* Submission Success Screen */}
       {isSubmitted && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-50/95 backdrop-blur-sm p-4 animate-in fade-in duration-500">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-slate-900/5 text-center p-10 transform transition-all scale-100">
-            <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-emerald-100 mb-6 animate-bounce">
-              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="text-emerald-600"><polyline points="20 6 9 17 4 12" /></svg>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F4F1DE]/95 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-[#0D1B2A]/10 bg-white p-8 text-center shadow-xl">
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EDF2EE] text-[#778D7A] border border-[#778D7A]/40">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 mb-2">Excellent!</h2>
-            <h3 className="text-xl font-semibold text-slate-700 mb-6">Exam Submitted Successfully</h3>
-            <p className="text-slate-500 mb-8 leading-relaxed">
-              Your assessment has been recorded securely.<br />You may now exit the exam window.
+            <h2 className="text-xl font-bold text-[#0D1B2A] mb-1.5">Assessment Completed</h2>
+            <p className="text-xs text-[#415A77] leading-relaxed mb-6">
+              Your examination responses have been securely transmitted and recorded in the database.
             </p>
             <button
+              type="button"
               onClick={() => navigate('/')}
-              className="w-full rounded-xl bg-slate-900 py-4 text-lg font-bold text-white shadow-xl hover:bg-slate-800 hover:shadow-2xl transition-all active:scale-[0.98]"
+              className="w-full rounded-xl bg-[#0D1B2A] py-3 text-xs font-semibold text-[#F4F1DE] hover:bg-[#1B263B] shadow-xs"
             >
-              Return to Home
+              Exit Examination Portal
             </button>
           </div>
         </div>
       )}
+
     </div>
   )
 }

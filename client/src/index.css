@@ -1,1 +1,46 @@
 @import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-deep-navy: #0D1B2A;
+    --color-dark-navy: #1B263B;
+    --color-muted-blue: #415A77;
+    --color-sage: #778D7A;
+    --color-sage-subtle: #EDF2EE;
+    --color-beige: #D4C4A8;
+    --color-beige-subtle: #F7F3EA;
+    --color-cream: #F4F1DE;
+    --color-surface-card: #FFFFFF;
+    --color-surface-warm: #FAF8F2;
+    --color-border-soft: rgba(13, 27, 42, 0.10);
+    --color-danger: #9E2A2B;
+    --color-danger-subtle: #FBEAEA;
+  }
+
+  body {
+    background-color: var(--color-cream);
+    color: var(--color-deep-navy);
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom scrollbar for examination question lists and panes */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F4F1DE;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D4C4A8;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #415A77;
+}

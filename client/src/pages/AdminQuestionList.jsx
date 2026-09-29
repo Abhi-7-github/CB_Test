@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { API_ENDPOINTS } from '../api'
 import AdminNavbar from '../components/AdminNavbar'
 import { useNavigate } from 'react-router-dom'
+import jsPDF from 'jspdf'
+import autoTable from 'jspdf-autotable'
 
 function AdminQuestionList() {
   const [questions, setQuestions] = useState([])
@@ -12,40 +14,40 @@ function AdminQuestionList() {
     fetchQuestions()
   }, [])
 
-    const resolveCorrectIndex = (question) => {
-        if (!question || !Array.isArray(question.options)) return -1
-        const total = question.options.length
-        const raw = question.correctAnswer
-        if (raw === null || raw === undefined) return -1
+  const resolveCorrectIndex = (question) => {
+    if (!question || !Array.isArray(question.options)) return -1
+    const total = question.options.length
+    const raw = question.correctAnswer
+    if (raw === null || raw === undefined) return -1
 
-        if (typeof raw === 'number' && Number.isFinite(raw)) {
-            if (raw >= 0 && raw < total) return raw
-            if (raw >= 1 && raw <= total) return raw - 1
-            return -1
-        }
-
-        const text = String(raw).trim()
-        if (!text) return -1
-
-        if (/^[A-Za-z]$/.test(text)) {
-            const idx = text.toUpperCase().charCodeAt(0) - 65
-            return idx >= 0 && idx < total ? idx : -1
-        }
-
-        if (/^\d+$/.test(text)) {
-            const num = Number(text)
-            if (num >= 0 && num < total) return num
-            if (num >= 1 && num <= total) return num - 1
-            return -1
-        }
-
-        const exactIdx = question.options.indexOf(text)
-        if (exactIdx !== -1) return exactIdx
-
-        const lowered = text.toLowerCase()
-        const ciIdx = question.options.findIndex((opt) => String(opt).toLowerCase() === lowered)
-        return ciIdx
+    if (typeof raw === 'number' && Number.isFinite(raw)) {
+      if (raw >= 0 && raw < total) return raw
+      if (raw >= 1 && raw <= total) return raw - 1
+      return -1
     }
+
+    const text = String(raw).trim()
+    if (!text) return -1
+
+    if (/^[A-Za-z]$/.test(text)) {
+      const idx = text.toUpperCase().charCodeAt(0) - 65
+      return idx >= 0 && idx < total ? idx : -1
+    }
+
+    if (/^\d+$/.test(text)) {
+      const num = Number(text)
+      if (num >= 0 && num < total) return num
+      if (num >= 1 && num <= total) return num - 1
+      return -1
+    }
+
+    const exactIdx = question.options.indexOf(text)
+    if (exactIdx !== -1) return exactIdx
+
+    const lowered = text.toLowerCase()
+    const ciIdx = question.options.findIndex((opt) => String(opt).toLowerCase() === lowered)
+    return ciIdx
+  }
 
   const fetchQuestions = async () => {
     try {
@@ -62,229 +64,245 @@ function AdminQuestionList() {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this question?')) return
+    if (!window.confirm('Are you sure you want to remove this question from the bank?')) return
 
     const adminKey = localStorage.getItem('adminKey') || ''
     if (!adminKey) {
-        alert('Admin key is missing. Please verify in the Add Question page.')
-        return
+      alert('Admin key is missing. Please authenticate on the Add Question page.')
+      return
     }
 
     try {
-        const response = await fetch(`${API_ENDPOINTS.questions}/${id}`, {
-            method: 'DELETE',
-            headers: {
-                'x-admin-key': adminKey
-            }
-        })
-
-        if (response.ok) {
-            setQuestions(prev => prev.filter(q => q._id !== id))
-        } else {
-            const data = await response.json()
-            alert(data.message || 'Failed to delete question')
+      const response = await fetch(`${API_ENDPOINTS.questions}/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'x-admin-key': adminKey
         }
+      })
+
+      if (response.ok) {
+        setQuestions(prev => prev.filter(q => q._id !== id))
+      } else {
+        const data = await response.json()
+        alert(data.message || 'Failed to delete question')
+      }
     } catch (error) {
-        console.error('Failed to delete question:', error)
-        alert('Error deleting question')
+      console.error('Failed to delete question:', error)
+      alert('Error deleting question')
     }
   }
 
   const handleEdit = (question) => {
-      navigate('/admin', { state: { question } })
+    navigate('/admin', { state: { question } })
   }
 
-    const resolveCorrectAnswerText = (question) => {
-        if (!question) return 'N/A'
+  const resolveCorrectAnswerText = (question) => {
+    if (!question) return 'N/A'
+    const correctIndex = resolveCorrectIndex(question)
+    if (correctIndex !== -1 && question.options?.[correctIndex]) {
+      return `${String.fromCharCode(65 + correctIndex)}. ${question.options[correctIndex]}`
+    }
+    if (question.correctAnswer !== undefined && question.correctAnswer !== null) {
+      return String(question.correctAnswer)
+    }
+    return 'N/A'
+  }
 
-        const correctIndex = resolveCorrectIndex(question)
-        if (correctIndex >= 0 && Array.isArray(question.options) && question.options[correctIndex] !== undefined) {
-            return question.options[correctIndex]
-        }
-
-        if (question.correctAnswer !== null && question.correctAnswer !== undefined && String(question.correctAnswer).trim()) {
-            return String(question.correctAnswer)
-        }
-
-        return 'N/A'
+  const handleDownloadQuestions = () => {
+    if (!questions.length) {
+      alert('No questions available to download.')
+      return
     }
 
-    const handleDownloadQuestions = async () => {
-        if (!questions.length) {
-            alert('No questions available to download.')
-            return
-        }
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+    const date = new Date().toISOString().split('T')[0]
 
-        const { default: jsPDF } = await import('jspdf')
-        const { default: autoTable } = await import('jspdf-autotable')
+    doc.setFontSize(16)
+    doc.text('Assessment Question Bank Registry', 40, 40)
+    doc.setFontSize(10)
+    doc.text(`Generated on: ${new Date().toLocaleString()} | Total Items: ${questions.length}`, 40, 58)
 
-        const formatOptionsText = (question) => {
-            if (!Array.isArray(question?.options) || question.options.length === 0) {
-                return 'N/A'
-            }
+    const rows = questions.map((q, idx) => {
+      const questionNumber = q.id !== undefined && q.id !== null ? String(q.id) : String(idx + 1)
+      const optionsText = q.type === 'mcq' && Array.isArray(q.options)
+        ? q.options.map((opt, i) => `${String.fromCharCode(65 + i)}. ${opt}`).join('\n')
+        : 'N/A'
+      const correctText = q.type === 'mcq' ? resolveCorrectAnswerText(q) : 'N/A'
 
-            return question.options
-                .map((opt, idx) => `${String.fromCharCode(65 + idx)}. ${opt}`)
-                .join('\n')
-        }
+      return [
+        questionNumber,
+        q.type.toUpperCase(),
+        q.text,
+        optionsText,
+        correctText,
+        String(q.marks || 1),
+      ]
+    })
 
-        const rows = questions.map((q, index) => [
-            index + 1,
-            q.text || 'N/A',
-            formatOptionsText(q),
-            resolveCorrectAnswerText(q),
-            q.marks ?? 'N/A',
-        ])
+    autoTable(doc, {
+      startY: 75,
+      head: [['#', 'Type', 'Question Prompt', 'Options', 'Designated Answer', 'Marks']],
+      body: rows,
+      styles: {
+        fontSize: 8.5,
+        cellPadding: 5,
+        valign: 'top',
+      },
+      headStyles: {
+        fillColor: [13, 27, 42],
+        textColor: 255,
+        fontStyle: 'bold',
+      },
+      margin: { left: 40, right: 40 },
+    })
 
-        const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
-        const date = new Date().toISOString().slice(0, 10)
-
-        doc.setFontSize(14)
-        doc.text('Questions List', 40, 40)
-        doc.setFontSize(10)
-        doc.text(`Generated on: ${date}`, 40, 58)
-
-        autoTable(doc, {
-            startY: 74,
-            head: [['Question Number', 'Question', 'Options', 'Answer', 'Marks']],
-            body: rows,
-            styles: {
-                fontSize: 9,
-                cellPadding: 6,
-                valign: 'top',
-            },
-            headStyles: {
-                fillColor: [30, 64, 175],
-                textColor: 255,
-                fontStyle: 'bold',
-            },
-            columnStyles: {
-                0: { cellWidth: 70 },
-                1: { cellWidth: 220 },
-                2: { cellWidth: 230 },
-                3: { cellWidth: 160 },
-                4: { cellWidth: 45 },
-            },
-            margin: { left: 40, right: 40 },
-        })
-
-        doc.save(`questions-list-${date}.pdf`)
-    }
+    doc.save(`examination-question-bank-${date}.pdf`)
+  }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="mx-auto max-w-5xl px-4 py-6">
+    <div className="min-h-screen bg-[#F4F1DE] px-4 py-8 md:px-8 font-sans text-[#0D1B2A]">
+      <div className="mx-auto max-w-5xl">
         <AdminNavbar />
 
-        <div className="mb-6 flex items-center justify-between">
-            <div>
-                <h1 className="text-xl font-semibold text-slate-900">Questions List</h1>
-                <p className="mt-1 text-sm text-slate-500">View all questions in the question bank.</p>
-            </div>
-            <div className="flex items-center gap-3">
-                <button
-                    onClick={handleDownloadQuestions}
-                    className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-emerald-700"
-                >
-                    Download PDF
-                </button>
-                <button 
-                    onClick={() => navigate('/admin')}
-                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-blue-700"
-                >
-                    Add New Question
-                </button>
-            </div>
+        {/* Action Header */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-[#0D1B2A]">Question Bank Registry</h1>
+            <p className="mt-1 text-xs text-[#415A77]">
+              Manage questions, answer keys, and export comprehensive assessment documentation.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleDownloadQuestions}
+              className="flex items-center gap-2 rounded-xl bg-[#778D7A] px-4 py-2 text-xs font-semibold text-white shadow-xs hover:bg-[#687C6B] transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span>Download PDF</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => navigate('/admin')}
+              className="flex items-center gap-2 rounded-xl bg-[#0D1B2A] px-4 py-2 text-xs font-semibold text-[#F4F1DE] shadow-xs hover:bg-[#1B263B] transition-colors"
+            >
+              <span>+ Add New Question</span>
+            </button>
+          </div>
         </div>
 
         {loading ? (
-            <div className="text-center py-10 text-slate-500">Loading questions...</div>
+          <div className="py-16 text-center text-xs font-semibold uppercase tracking-wider text-[#415A77]">
+            Loading Assessment Questions...
+          </div>
         ) : (
-            <div className="space-y-4">
+          <div className="space-y-4">
             {questions.length === 0 ? (
-                <div className="bg-white p-8 rounded-lg border border-slate-200 text-center text-slate-500">
-                    No questions found. Go to "Add Question" to create one.
-                </div>
+              <div className="rounded-2xl border border-[#0D1B2A]/10 bg-white p-10 text-center text-xs text-[#415A77]">
+                No questions found in registry. Navigate to "Add Question" to construct one.
+              </div>
             ) : (
-                questions.map((q) => (
-                <div key={q._id} className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative">
-                    <div className="absolute top-4 right-4 flex gap-2">
-                        <button 
-                            onClick={() => handleEdit(q)}
-                            className="bg-indigo-50 text-indigo-600 px-3 py-1.5 rounded text-xs font-semibold hover:bg-indigo-100 border border-indigo-200"
-                        >
-                            Edit
-                        </button>
-                        <button 
-                            onClick={() => handleDelete(q._id)}
-                            className="bg-rose-50 text-rose-600 px-3 py-1.5 rounded text-xs font-semibold hover:bg-rose-100 border border-rose-200"
-                        >
-                            Delete
-                        </button>
+              questions.map((q, idx) => (
+                <div
+                  key={q._id}
+                  className="relative rounded-2xl border border-[#0D1B2A]/10 bg-white p-6 shadow-xs hover:border-[#415A77]/30 transition-all duration-200"
+                >
+                  {/* Top Action Pills */}
+                  <div className="absolute top-5 right-5 flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(q)}
+                      className="rounded-lg border border-[#415A77]/30 bg-[#EDF2EE] px-3 py-1 text-xs font-semibold text-[#415A77] hover:bg-[#415A77] hover:text-white transition-colors"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(q._id)}
+                      className="rounded-lg border border-[#9E2A2B]/30 bg-[#FBEAEA] px-3 py-1 text-xs font-semibold text-[#9E2A2B] hover:bg-[#9E2A2B] hover:text-white transition-colors"
+                    >
+                      Delete
+                    </button>
+                  </div>
+
+                  {/* Header & Badges */}
+                  <div className="mb-3 pr-28">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-xs font-bold text-[#0D1B2A]">
+                        #{q.id || idx + 1}
+                      </span>
+                      <span className={`rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
+                        q.type === 'mcq'
+                          ? 'border border-[#778D7A]/30 bg-[#EDF2EE] text-[#415A77]'
+                          : 'border border-[#D4C4A8]/40 bg-[#F7F3EA] text-[#0D1B2A]'
+                      }`}>
+                        {q.type === 'mcq' ? 'Multiple Choice' : 'File Submission'}
+                      </span>
+                      <span className="text-[11px] text-[#415A77] font-medium">
+                        • {q.marks || 1} {q.marks === 1 ? 'mark' : 'marks'}
+                      </span>
                     </div>
 
-                    <div className="flex justify-between items-start mb-4 pr-32">
-                        <div>
-                            <span className={`inline-block px-2.5 py-0.5 text-xs font-bold rounded mb-2 uppercase tracking-wide ${
-                                q.type === 'mcq' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'
-                            }`}>
-                                {q.type}
-                            </span>
-                            <h3 className="text-lg font-medium text-slate-900 leading-snug">{q.text}</h3>
-                        </div>
-                    </div>
+                    <h3 className="text-base font-semibold leading-relaxed text-[#0D1B2A]">
+                      {q.text}
+                    </h3>
+                  </div>
 
-                    {q.type === 'mcq' && (
-                    <div className="bg-slate-50 rounded-md p-4 mb-3 border border-slate-100">
-                        <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                                        {q.options.map((opt, idx) => {
-                                                            const correctIndex = resolveCorrectIndex(q)
-                                                            const isCorrect = idx === correctIndex
-                                                            return (
-                                                        <li key={idx} className={`flex items-start gap-2 text-sm p-2 rounded ${
-                                                                isCorrect ? 'bg-green-50 text-green-700 border border-green-200 font-medium' : 'text-slate-600'
-                                                        }`}>
-                                <span className={`flex-shrink-0 w-5 h-5 flex items-center justify-center rounded-full text-xs border ${
-                                                                         isCorrect ? 'border-green-500 bg-green-500 text-white' : 'border-slate-300'
-                                }`}>
-                                    {String.fromCharCode(65 + idx)}
+                  {/* MCQ Options Display */}
+                  {q.type === 'mcq' && Array.isArray(q.options) && (
+                    <div className="mt-3 rounded-xl border border-[#0D1B2A]/10 bg-[#FAF8F2] p-4">
+                      <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                        {q.options.map((opt, oIdx) => {
+                          const correctIndex = resolveCorrectIndex(q)
+                          const isCorrect = oIdx === correctIndex
+                          return (
+                            <li
+                              key={oIdx}
+                              className={`flex items-center gap-2 p-2.5 rounded-lg border transition-colors ${
+                                isCorrect
+                                  ? 'border-[#778D7A]/50 bg-[#EDF2EE] text-[#1B263B] font-semibold'
+                                  : 'border-[#0D1B2A]/10 bg-white text-[#415A77]'
+                              }`}
+                            >
+                              <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[10px] font-bold border ${
+                                isCorrect
+                                  ? 'bg-[#778D7A] text-white border-[#778D7A]'
+                                  : 'border-[#0D1B2A]/20 bg-white text-[#415A77]'
+                              }`}>
+                                {String.fromCharCode(65 + oIdx)}
+                              </span>
+                              <span className="truncate">{opt}</span>
+                              {isCorrect && (
+                                <span className="ml-auto text-[10px] uppercase font-bold text-[#778D7A]">
+                                  Key
                                 </span>
-                                <span>{opt}</span>
-                                                                {isCorrect && <span className="ml-auto text-xs font-bold uppercase tracking-wider text-green-600">Correct</span>}
+                              )}
                             </li>
-                                                            )})}
-                        </ul>
+                          )
+                        })}
+                      </ul>
                     </div>
-                    )}
+                  )}
 
-                    {q.type === 'file' && (
-                        <div className="bg-slate-50 rounded-md p-4 mb-3 border border-slate-100 text-sm text-slate-600">
-                            <div className="flex gap-6">
-                                <div>
-                                    <span className="font-semibold text-slate-900">Allowed Types:</span>
-                                    <span className="ml-2 px-2 py-0.5 bg-white border border-slate-200 rounded text-xs">{q.fileUpload?.accept?.join(', ')}</span>
-                                </div>
-                                <div>
-                                    <span className="font-semibold text-slate-900">Max Size:</span>
-                                    <span className="ml-2">{q.fileUpload?.maxSizeMb} MB</span>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-3">
-                         <span className="text-xs font-mono text-slate-400 bg-slate-100 px-2 py-1 rounded select-all">
-                            ID: {q._id}
-                        </span>
-                         <span className="text-sm font-semibold text-slate-700">
-                            Marks: <span className="bg-slate-100 px-2 py-0.5 rounded text-slate-900 border border-slate-200">{q.marks}</span>
-                         </span>
+                  {/* File Upload Info Display */}
+                  {q.type === 'file' && (
+                    <div className="mt-2 text-xs text-[#415A77] flex items-center gap-3">
+                      <span>Accepted: {q.fileUpload?.accept?.join(', ') || 'Any format'}</span>
+                      <span>•</span>
+                      <span>Max: {q.fileUpload?.maxSizeMb || 5}MB</span>
                     </div>
+                  )}
+
                 </div>
-                ))
+              ))
             )}
-            </div>
+          </div>
         )}
+
       </div>
     </div>
   )

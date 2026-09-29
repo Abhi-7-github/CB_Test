@@ -7,8 +7,8 @@ export default function AdminNavbar() {
 
   const isActive = (path) => {
     return location.pathname === path
-      ? 'border-slate-900 text-slate-900'
-      : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300'
+      ? 'border-[#D4C4A8] text-[#F4F1DE] font-semibold'
+      : 'border-transparent text-[#D4C4A8]/70 hover:text-[#F4F1DE] hover:border-[#D4C4A8]/40'
   }
 
   const [isTestActive, setIsTestActive] = useState(false)
@@ -62,51 +62,65 @@ export default function AdminNavbar() {
   }
 
   return (
-    <nav className="bg-white border-b border-slate-200 mb-6">
-      <div className="flex items-center justify-between h-14">
-        <div className="flex items-center gap-8">
-          <span className="text-slate-900 font-bold text-lg">Admin Panel</span>
-          <div className="flex space-x-1">
+    <nav className="rounded-2xl bg-[#0D1B2A] border border-[#1B263B] px-6 mb-8 shadow-sm">
+      <div className="flex flex-wrap items-center justify-between min-h-16 py-2 gap-4">
+        
+        {/* Brand & Tabs */}
+        <div className="flex flex-wrap items-center gap-6 md:gap-8">
+          <div className="flex items-center gap-2.5">
+            <img
+              src="/CB-KARE.jpeg"
+              alt="CB-KARE Logo"
+              className="h-8 w-auto rounded-lg object-contain bg-white p-0.5"
+            />
+            <span className="text-sm font-bold tracking-tight text-[#F4F1DE]">CB-KARE Admin</span>
+          </div>
+
+          <div className="flex flex-wrap items-center space-x-1 sm:space-x-3 text-xs">
             <Link
               to="/admin"
-              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive('/admin')}`}
+              className={`inline-flex items-center px-2 py-3 border-b-2 transition-colors ${isActive('/admin')}`}
             >
               Add Question
             </Link>
             <Link
               to="/admin/list"
-              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive('/admin/list')}`}
+              className={`inline-flex items-center px-2 py-3 border-b-2 transition-colors ${isActive('/admin/list')}`}
             >
               Questions List
             </Link>
             <Link
               to="/admin/reset"
-              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive('/admin/reset')}`}
+              className={`inline-flex items-center px-2 py-3 border-b-2 transition-colors ${isActive('/admin/reset')}`}
             >
               Reset Test
             </Link>
             <Link
               to="/admin/score"
-              className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${isActive('/admin/score')}`}
+              className={`inline-flex items-center px-2 py-3 border-b-2 transition-colors ${isActive('/admin/score')}`}
             >
               Scores
             </Link>
           </div>
         </div>
 
+        {/* Global Test Master Switch */}
         <button
+          type="button"
           onClick={toggleTestStatus}
           disabled={loading}
           className={`
-                  px-4 py-2 rounded-md font-bold text-sm shadow-sm transition-all
-                  ${isTestActive
-              ? 'bg-rose-100 text-rose-700 hover:bg-rose-200 border border-rose-200'
-              : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200'}
-                  disabled:opacity-50 disabled:cursor-not-allowed
-                `}
+            flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold shadow-xs transition-colors duration-200
+            ${isTestActive
+              ? 'bg-[#9E2A2B] text-white hover:bg-[#852324]'
+              : 'bg-[#778D7A] text-white hover:bg-[#687C6B]'}
+            disabled:opacity-50 disabled:cursor-not-allowed
+          `}
         >
-          {loading ? '...' : isTestActive ? 'Stop Test' : 'Begin Test'}
+          <span className={`h-2 w-2 rounded-full ${isTestActive ? 'bg-white animate-pulse' : 'bg-white'}`} />
+          {loading ? 'Updating...' : isTestActive ? 'End Live Assessment' : 'Begin Live Assessment'}
         </button>
+
       </div>
     </nav>
   )

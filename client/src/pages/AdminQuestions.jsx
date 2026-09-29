@@ -3,7 +3,6 @@ import { API_ENDPOINTS } from '../api'
 import TextField from '../components/TextField'
 import TextAreaField from '../components/TextAreaField'
 import { useLocation, useNavigate } from 'react-router-dom'
-
 import AdminNavbar from '../components/AdminNavbar'
 
 function AdminQuestions() {
@@ -17,10 +16,10 @@ function AdminQuestions() {
 
   const [formData, setFormData] = useState({
     _id: null,
-    id: '', // User visible ID (e.g. 1, 2, 3)
+    id: '',
     type: 'mcq',
     text: '',
-    options: [''], // Initialize with one empty option
+    options: [''],
     correctAnswer: '',
     marks: '1',
     fileAccept: '',
@@ -29,10 +28,16 @@ function AdminQuestions() {
   const [status, setStatus] = useState({ type: 'idle', message: '' })
   const [submitting, setSubmitting] = useState(false)
   const [verifying, setVerifying] = useState(false)
-  const [questions, setQuestions] = useState([])
+  const [_questions, setQuestions] = useState([])
 
   useEffect(() => {
     fetchQuestions()
+    const storedVerified = localStorage.getItem('adminVerified') === 'true'
+    const storedKey = localStorage.getItem('adminKey') || ''
+    if (storedVerified && storedKey) {
+      setIsVerified(true)
+      setAdminKey(storedKey)
+    }
   }, [])
 
   const resolveCorrectIndex = (question) => {
@@ -72,21 +77,21 @@ function AdminQuestions() {
 
   useEffect(() => {
     if (location.state?.question) {
-        const q = location.state.question
-        setIsEditing(true)
-        setFormData({
-            _id: q._id,
-            id: q.id || '',
-            type: q.type,
-            text: q.text,
-            options: q.type === 'mcq' ? (q.options.length ? q.options : ['']) : [''],
-            correctAnswer: q.type === 'mcq' ? resolveCorrectIndex(q) : '',
-            marks: q.marks?.toString() || '1',
-            fileAccept: q.fileUpload?.accept?.join(', ') || '',
-            fileMaxSizeMb: q.fileUpload?.maxSizeMb?.toString() || '5'
-        })
+      const q = location.state.question
+      setIsEditing(true)
+      setFormData({
+        _id: q._id,
+        id: q.id || '',
+        type: q.type,
+        text: q.text,
+        options: q.type === 'mcq' ? (q.options.length ? q.options : ['']) : [''],
+        correctAnswer: q.type === 'mcq' ? resolveCorrectIndex(q) : '',
+        marks: q.marks?.toString() || '1',
+        fileAccept: q.fileUpload?.accept?.join(', ') || '',
+        fileMaxSizeMb: q.fileUpload?.maxSizeMb?.toString() || '5'
+      })
     } else {
-        setIsEditing(false)
+      setIsEditing(false)
     }
   }, [location.state])
 
@@ -102,15 +107,6 @@ function AdminQuestions() {
     }
   }
 
-  useEffect(() => {
-    const verified = localStorage.getItem('adminVerified') === 'true'
-    const storedKey = localStorage.getItem('adminKey') || ''
-    if (verified) {
-      setIsVerified(true)
-      setAdminKey(storedKey)
-    }
-  }, [])
-
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({ ...prev, [field]: event.target.value }))
   }
@@ -120,68 +116,82 @@ function AdminQuestions() {
     setSubmitting(true)
     setStatus({ type: 'idle', message: '' })
 
-    const options = formData.type === 'mcq'
-      ? formData.options.filter((opt) => opt.trim())
-      : []
-
-    const parsedCorrectAnswer = Number(formData.correctAnswer)
-    const correctAnswer = formData.type === 'mcq'
-      ? (Number.isNaN(parsedCorrectAnswer) ? formData.correctAnswer : parsedCorrectAnswer)
-      : 'file'
-
-    const payload = {
-      id: formData.id.trim() || undefined,
-      type: formData.type,
-      text: formData.text.trim(),
-      options,
-      correctAnswer,
-      marks: Number(formData.marks) || 1,
-      fileUpload: formData.type === 'file'
-        ? {
-            required: true,
-            accept: formData.fileAccept
-              .split(',')
-              .map((item) => item.trim())
-              .filter(Boolean),
-            maxSizeMb: Number(formData.fileMaxSizeMb) || 5,
-          }
-        : undefined,
-    }
-
     try {
-      const url = isEditing 
-        ? `${API_ENDPOINTS.questions}/${formData._id}` 
+      const payload = {
+        id: formData.id ? Number(formData.id) : undefined,
+        type: formData.type,
+        text: formData.text,
+        marks: Number(formData.marks || 1),
+      }
+
+      if (formData.type === 'mcq') {
+        const validOptions = formData.options.map((opt) => opt.trim()).filter(Boolean)
+        if (validOptions.length < 2) {
+          throw new Error('Please provide at least 2 non-empty options for MCQ.')
+        }
+
+        if (formData.correctAnswer === '') {
+          throw new Error('Please select the correct option.')
+        }
+
+        const correctIndex = Number(formData.correctAnswer)
+        if (!Number.isInteger(correctIndex) || correctIndex < 0 || correctIndex >= validOptions.length) {
+          throw new Error('Please select a valid correct option.')
+        }
+
+        payload.options = validOptions
+        payload.correctAnswer = correctIndex
+      }
+
+      if (formData.type === 'file') {
+        payload.fileUpload = {
+          accept: formData.fileAccept
+            ? formData.fileAccept.split(',').map((item) => item.trim()).filter(Boolean)
+            : [],
+          maxSizeMb: Number(formData.fileMaxSizeMb || 5),
+        }
+      }
+
+      const activeAdminKey = adminKey || localStorage.getItem('adminKey') || ''
+      const url = isEditing
+        ? `${API_ENDPOINTS.questions}/${formData._id}`
         : API_ENDPOINTS.questions
-      
       const method = isEditing ? 'PUT' : 'POST'
 
       const response = await fetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
-          'x-admin-key': adminKey,
+          'x-admin-key': activeAdminKey,
         },
         body: JSON.stringify(payload),
       })
 
       if (!response.ok) {
-        throw new Error(`Failed to ${isEditing ? 'update' : 'create'} question`)
+        const data = await response.json().catch(() => ({}))
+        throw new Error(data.message || 'Failed to save question')
       }
 
-      setStatus({ type: 'success', message: `Question ${isEditing ? 'updated' : 'created'}.` })
-      
-      if (!isEditing) {
-          setFormData({
-            _id: null,
-            id: '',
-            type: 'mcq',
-            text: '',
-            options: [''],
-            correctAnswer: '',
-            marks: '1',
-            fileAccept: '',
-            fileMaxSizeMb: '5',
-          })
+      setStatus({
+        type: 'success',
+        message: isEditing ? 'Question updated successfully.' : 'Question created successfully.',
+      })
+
+      if (isEditing) {
+        setIsEditing(false)
+        navigate('/admin/list')
+      } else {
+        setFormData({
+          _id: null,
+          id: '',
+          type: 'mcq',
+          text: '',
+          options: [''],
+          correctAnswer: '',
+          marks: '1',
+          fileAccept: '',
+          fileMaxSizeMb: '5',
+        })
       }
       fetchQuestions()
     } catch (err) {
@@ -205,13 +215,13 @@ function AdminQuestions() {
       })
 
       if (!response.ok) {
-        throw new Error('Invalid admin key')
+        throw new Error('Invalid admin credentials key.')
       }
 
       localStorage.setItem('adminVerified', 'true')
       localStorage.setItem('adminKey', adminKey)
       setIsVerified(true)
-      setVerifyStatus({ type: 'success', message: 'Admin key verified.' })
+      setVerifyStatus({ type: 'success', message: 'Admin authentication verified.' })
     } catch (err) {
       setIsVerified(false)
       setVerifyStatus({ type: 'error', message: err.message })
@@ -220,119 +230,143 @@ function AdminQuestions() {
     }
   }
 
-
-
   return (
-    <div className="grid gap-4">
-      {isVerified && <AdminNavbar />}
-      <div className="flex items-center justify-between">
-         <div>
-            <h1 className="text-xl font-semibold text-slate-900">{isEditing ? 'Admin: Edit Question' : 'Admin: Add Question'}</h1>
-            <p className="mt-1 text-sm text-slate-500">
-            {isEditing ? 'Update the selected question.' : 'Create a new question for students.'}
-            </p>
-         </div>
-         {isEditing && (
-             <button
-                onClick={() => {
-                    setIsEditing(false)
-                    setFormData({
-                        _id: null,
-                        id: '', 
-                        type: 'mcq',
-                        text: '',
-                        options: [''],
-                        correctAnswer: '',
-                        marks: '1',
-                        fileAccept: '',
-                        fileMaxSizeMb: '5',
-                    })
-                    navigate('/admin') // Clear state
-                }}
-                className="text-sm text-slate-500 hover:text-slate-800 underline"
-             >
-                 Cancel Edit
-             </button>
-         )}
-      </div>
+    <div className="min-h-screen bg-[#F4F1DE] px-4 py-8 md:px-8 font-sans text-[#0D1B2A]">
+      <div className="mx-auto max-w-5xl">
+        
+        {isVerified && <AdminNavbar />}
 
-      {!isVerified && (
-        <div className="rounded-md border border-slate-200 bg-white p-4">
-          <TextField
-            id="admin-key"
-            label="Admin Key"
-            type="password"
-            value={adminKey}
-            onChange={(event) => setAdminKey(event.target.value)}
-            placeholder="Enter admin key"
-            required
-          />
-          <div className="mt-3 flex flex-wrap items-center gap-3">
+        {/* Header Ribbon */}
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-[#0D1B2A]">
+              {isEditing ? 'Edit Examination Question' : 'Author New Question'}
+            </h1>
+            <p className="mt-1 text-xs text-[#415A77]">
+              {isEditing
+                ? 'Update specifications and choices for this assessment item.'
+                : 'Configure a new problem statement and answer criteria for candidates.'}
+            </p>
+          </div>
+
+          {isEditing && (
             <button
               type="button"
-              onClick={handleVerify}
-              className="rounded-md border border-slate-300 px-3 py-1.5 text-xs font-semibold text-slate-700"
-              disabled={!adminKey || verifying}
+              onClick={() => {
+                setIsEditing(false)
+                setFormData({
+                  _id: null,
+                  id: '',
+                  type: 'mcq',
+                  text: '',
+                  options: [''],
+                  correctAnswer: '',
+                  marks: '1',
+                  fileAccept: '',
+                  fileMaxSizeMb: '5',
+                })
+                navigate('/admin')
+              }}
+              className="text-xs font-semibold text-[#415A77] hover:text-[#0D1B2A] transition-colors"
             >
-              {verifying ? 'Verifying...' : 'Verify Key'}
+              ← Cancel Editing
             </button>
-            {verifyStatus.message && (
-              <span
-                className={`text-xs font-semibold ${
-                  verifyStatus.type === 'success'
-                    ? 'text-emerald-700'
-                    : 'text-rose-700'
-                }`}
-              >
-                {verifyStatus.message}
-              </span>
-            )}
-          </div>
+          )}
         </div>
-      )}
 
-      {isVerified ? (
-        <form
-          className="grid gap-4 rounded-md border border-slate-200 bg-white p-5"
-          onSubmit={handleSubmit}
-        >
-          <TextField
-            id="question-id"
-            label="Question Number"
-            value={formData.id}
-            onChange={handleChange('id')}
-            placeholder="1"
-          />
-          <div className="grid gap-2">
-            <label className="text-sm font-semibold text-slate-800" htmlFor="question-type">
-              Question Type
-            </label>
-            <select
-              id="question-type"
-              value={formData.type}
-              onChange={handleChange('type')}
-              className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm"
-            >
-              <option value="mcq">MCQ</option>
-              <option value="file">File Upload</option>
-            </select>
+        {/* Verification Screen if unverified */}
+        {!isVerified && (
+          <div className="mb-6 rounded-2xl border border-[#0D1B2A]/10 bg-white p-6 shadow-xs max-w-md">
+            <h2 className="text-sm font-bold text-[#0D1B2A] mb-1">Invigilator Authorization</h2>
+            <p className="text-xs text-[#415A77] mb-4">Enter administrative key to unlock question authoring.</p>
+
+            <TextField
+              id="admin-key"
+              label="Admin Security Key"
+              type="password"
+              value={adminKey}
+              onChange={(event) => setAdminKey(event.target.value)}
+              placeholder="Enter admin security key"
+              required
+            />
+            
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleVerify}
+                disabled={!adminKey || verifying}
+                className="rounded-xl bg-[#0D1B2A] px-4 py-2 text-xs font-semibold text-[#F4F1DE] shadow-xs hover:bg-[#1B263B] transition-colors disabled:opacity-50"
+              >
+                {verifying ? 'Authenticating...' : 'Verify Access'}
+              </button>
+              {verifyStatus.message && (
+                <span
+                  className={`text-xs font-semibold ${
+                    verifyStatus.type === 'success' ? 'text-[#778D7A]' : 'text-[#9E2A2B]'
+                  }`}
+                >
+                  {verifyStatus.message}
+                </span>
+              )}
+            </div>
           </div>
-          <TextAreaField
-            id="question-text"
-            label="Question Text"
-            value={formData.text}
-            onChange={handleChange('text')}
-            placeholder="Enter the question here"
-            required
-            rows={3}
-          />
-          {formData.type === 'mcq' && (
-            <>
-              <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-800">Options</label>
+        )}
+
+        {/* Question Form */}
+        {isVerified ? (
+          <form
+            className="rounded-2xl border border-[#0D1B2A]/10 bg-white p-6 md:p-8 shadow-xs space-y-5"
+            onSubmit={handleSubmit}
+          >
+            <div className="grid gap-4 sm:grid-cols-2">
+              <TextField
+                id="question-id"
+                label="Question Index / Number"
+                value={formData.id}
+                onChange={handleChange('id')}
+                placeholder="1"
+              />
+
+              <div className="grid gap-1.5">
+                <label className="text-xs font-semibold uppercase tracking-wider text-[#0D1B2A]" htmlFor="question-type">
+                  Question Format
+                </label>
+                <select
+                  id="question-type"
+                  value={formData.type}
+                  onChange={handleChange('type')}
+                  className="w-full rounded-xl border border-[#0D1B2A]/15 bg-[#FCFAF5] px-3.5 py-2.5 text-sm text-[#0D1B2A] outline-none focus:border-[#415A77]"
+                >
+                  <option value="mcq">Multiple Choice Question (MCQ)</option>
+                  <option value="file">File Submission / Upload</option>
+                </select>
+              </div>
+            </div>
+
+            <TextAreaField
+              id="question-text"
+              label="Question Prompt Statement"
+              value={formData.text}
+              onChange={handleChange('text')}
+              placeholder="Enter the complete question prompt..."
+              required
+              rows={3}
+            />
+
+            {/* MCQ Options Config */}
+            {formData.type === 'mcq' && (
+              <div className="rounded-xl border border-[#0D1B2A]/10 bg-[#FAF8F2] p-5 space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold uppercase tracking-wider text-[#0D1B2A]">
+                    Multiple Choice Options
+                  </label>
+                  <span className="text-[11px] text-[#415A77]">Minimum 2 choices</span>
+                </div>
+
                 {formData.options.map((option, index) => (
-                  <div key={index} className="flex gap-2">
-                     <TextField
+                  <div key={index} className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <TextField
                         id={`option-${index}`}
                         value={option}
                         onChange={(e) => {
@@ -341,113 +375,116 @@ function AdminQuestions() {
                           setFormData(prev => ({ ...prev, options: newOptions }))
                         }}
                         placeholder={`Option ${index + 1}`}
-                     />
-                     {formData.options.length > 1 && (
-                       <button
-                         type="button"
-                         onClick={() => {
-                           const newOptions = formData.options.filter((_, i) => i !== index)
-                           setFormData(prev => ({ ...prev, options: newOptions }))
-                         }}
-                         className="px-3 py-2 text-sm text-red-600 border border-slate-200 rounded hover:bg-red-50"
-                       >
-                         Remove
-                       </button>
-                     )}
+                      />
+                    </div>
+                    {formData.options.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const newOptions = formData.options.filter((_, i) => i !== index)
+                          setFormData(prev => ({ ...prev, options: newOptions }))
+                        }}
+                        className="mt-5 rounded-xl border border-[#9E2A2B]/30 bg-white px-3 py-2 text-xs font-semibold text-[#9E2A2B] hover:bg-[#FBEAEA] transition-colors"
+                      >
+                        Remove
+                      </button>
+                    )}
                   </div>
                 ))}
+
                 <button
                   type="button"
                   onClick={() => {
                     setFormData(prev => ({ ...prev, options: [...prev.options, ''] }))
                   }}
-                  className="w-fit px-3 py-1.5 text-sm text-blue-600 border border-blue-200 rounded hover:bg-blue-50 mt-1"
+                  className="rounded-xl border border-[#415A77]/30 bg-white px-3.5 py-1.5 text-xs font-semibold text-[#415A77] hover:bg-[#EDF2EE] transition-colors"
                 >
-                  + Add Option
+                  + Add Option Choice
                 </button>
-              </div>
-              <div className="grid gap-2">
-                <label className="text-sm font-semibold text-slate-800" htmlFor="question-answer">
-                  Right Option
-                </label>
-                <select
-                  id="question-answer"
-                  value={formData.correctAnswer}
-                  onChange={handleChange('correctAnswer')}
-                  className="w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm"
-                  required
-                >
-                  <option value="">Select the correct option</option>
-                  {formData.options.map((opt, idx) => {
-                     const trimmed = opt.trim()
-                     if (!trimmed) return null
-                     return (
+
+                <div className="pt-3 border-t border-[#0D1B2A]/10">
+                  <label className="text-xs font-semibold uppercase tracking-wider text-[#0D1B2A] block mb-1.5" htmlFor="question-answer">
+                    Correct Option Key
+                  </label>
+                  <select
+                    id="question-answer"
+                    value={formData.correctAnswer}
+                    onChange={handleChange('correctAnswer')}
+                    className="w-full rounded-xl border border-[#0D1B2A]/15 bg-white px-3.5 py-2.5 text-sm text-[#0D1B2A] outline-none focus:border-[#415A77]"
+                    required
+                  >
+                    <option value="">Select the designated correct answer</option>
+                    {formData.options.map((opt, idx) => {
+                      const trimmed = opt.trim()
+                      if (!trimmed) return null
+                      return (
                         <option key={idx} value={idx}>
-                          {trimmed}
+                          Option {idx + 1}: {trimmed}
                         </option>
-                     )
-                  })}
-                </select>
+                      )
+                    })}
+                  </select>
+                </div>
               </div>
-            </>
-          )}
-          {formData.type === 'file' && (
-            <>
+            )}
+
+            {/* File Upload Config */}
+            {formData.type === 'file' && (
+              <div className="grid gap-4 sm:grid-cols-2 rounded-xl border border-[#0D1B2A]/10 bg-[#FAF8F2] p-5">
+                <TextField
+                  id="file-accept"
+                  label="Accepted Extensions (comma-separated)"
+                  value={formData.fileAccept}
+                  onChange={handleChange('fileAccept')}
+                  placeholder=".pdf, .docx, .zip"
+                />
+                <TextField
+                  id="file-max-size"
+                  label="Maximum Allowed Size (MB)"
+                  type="number"
+                  value={formData.fileMaxSizeMb}
+                  onChange={handleChange('fileMaxSizeMb')}
+                  placeholder="5"
+                />
+              </div>
+            )}
+
+            <div className="max-w-xs">
               <TextField
-                id="file-accept"
-                label="Accepted File Types (comma separated)"
-                value={formData.fileAccept}
-                onChange={handleChange('fileAccept')}
-                placeholder=".pdf, .docx"
-              />
-              <TextField
-                id="file-max-size"
-                label="Max Size (MB)"
+                id="question-marks"
+                label="Assigned Marks"
                 type="number"
-                value={formData.fileMaxSizeMb}
-                onChange={handleChange('fileMaxSizeMb')}
-                placeholder="5"
+                value={formData.marks}
+                onChange={handleChange('marks')}
+                placeholder="1"
               />
-            </>
-          )}
-          <TextField
-            id="question-marks"
-            label="Marks"
-            type="number"
-            value={formData.marks}
-            onChange={handleChange('marks')}
-            placeholder="1"
-          />
+            </div>
 
-          <button
-            type="submit"
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
-            disabled={submitting}
+            <div className="pt-4 border-t border-[#0D1B2A]/10 flex items-center justify-end">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="rounded-xl bg-[#0D1B2A] px-6 py-2.5 text-xs font-semibold text-[#F4F1DE] shadow-xs hover:bg-[#1B263B] transition-colors disabled:opacity-50"
+              >
+                {submitting ? 'Saving Question...' : (isEditing ? 'Update Question' : 'Commit Question to Bank')}
+              </button>
+            </div>
+          </form>
+        ) : null}
+
+        {status.message && (
+          <div
+            className={`mt-4 rounded-xl border p-3.5 text-xs font-semibold ${
+              status.type === 'success'
+                ? 'border-[#778D7A]/40 bg-[#EDF2EE] text-[#1B263B]'
+                : 'border-[#9E2A2B]/20 bg-[#FBEAEA] text-[#782828]'
+            }`}
           >
-            {submitting ? 'Saving...' : (isEditing ? 'Update Question' : 'Create Question')}
-          </button>
-        </form>
-      ) : (
-        <div className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-500">
-          Verify the admin key to unlock question creation.
-        </div>
-      )}
+            {status.message}
+          </div>
+        )}
 
-
-
-      {status.message && (
-        <div
-          className={`rounded-md px-3 py-2 text-sm font-semibold ${
-            status.type === 'success'
-              ? 'bg-emerald-50 text-emerald-700'
-              : 'bg-rose-50 text-rose-700'
-          }`}
-        >
-          {status.message}
-        </div>
-      )}
-
-
+      </div>
     </div>
   )
 }

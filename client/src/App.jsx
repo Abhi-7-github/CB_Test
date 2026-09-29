@@ -28,36 +28,37 @@ function App() {
 
 	return (
 		<Router>
-			<div className="min-h-screen bg-slate-50 text-slate-900">
-				<main className="mx-auto w-full max-w-5xl px-4 py-6">
-					<Suspense fallback={
-						<div className="flex h-64 w-full items-center justify-center">
-							<div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-200 border-t-slate-800" />
+			<div className="min-h-screen bg-[#F4F1DE] text-[#0D1B2A] font-sans antialiased">
+				<Suspense fallback={
+					<div className="flex h-screen w-full items-center justify-center bg-[#F4F1DE]">
+						<div className="flex flex-col items-center gap-3">
+							<div className="h-8 w-8 animate-spin rounded-full border-3 border-[#D4C4A8] border-t-[#0D1B2A]" />
+							<p className="text-xs font-medium tracking-wide text-[#415A77]">Loading Examination Platform...</p>
 						</div>
-					}>
-						<Routes>
-							<Route path="/" element={<Navigate to="/login" replace />} />
-							<Route
-								path="/student"
-								element={
-									isStudentVerified ? <StudentQuestions /> : <Navigate to="/login" replace />
-								}
-							/>
-							<Route
-								path="/system-check"
-								element={
-									isStudentVerified ? <SystemCheck /> : <Navigate to="/login" replace />
-								}
-							/>
-							<Route path="/admin" element={<AdminQuestions />} />
-							<Route path="/admin/list" element={<AdminQuestionList />} />
-							<Route path="/admin/reset" element={<AdminTestReset />} />
-							<Route path="/admin/score" element={<AdminStudentScore />} />
-							<Route path="/login" element={<StudentLogin />} />
-							<Route path="*" element={<Navigate to="/login" replace />} />
-						</Routes>
-					</Suspense>
-				</main>
+					</div>
+				}>
+					<Routes>
+						<Route path="/" element={<Navigate to="/login" replace />} />
+						<Route
+							path="/student"
+							element={
+								isStudentVerified ? <StudentQuestions /> : <Navigate to="/login" replace />
+							}
+						/>
+						<Route
+							path="/system-check"
+							element={
+								isStudentVerified ? <SystemCheck /> : <Navigate to="/login" replace />
+							}
+						/>
+						<Route path="/admin" element={<AdminQuestions />} />
+						<Route path="/admin/list" element={<AdminQuestionList />} />
+						<Route path="/admin/reset" element={<AdminTestReset />} />
+						<Route path="/admin/score" element={<AdminStudentScore />} />
+						<Route path="/login" element={<StudentLogin />} />
+						<Route path="*" element={<Navigate to="/login" replace />} />
+					</Routes>
+				</Suspense>
 			</div>
 		</Router>
 	)
