@@ -9,6 +9,14 @@ const Score = require('../models/Score');
 
 const router = express.Router();
 
+function requireAdmin(req, res, next) {
+  const adminKey = req.header('x-admin-key');
+  if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  return next();
+}
+
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
@@ -93,13 +101,14 @@ function resolveCorrectIndex(question) {
 
 router.post('/submit-test', async (req, res) => {
   try {
-    const { studentEmail, responses } = req.body;
+    const { studentEmail, studentName, responses } = req.body;
 
     if (!studentEmail) {
       return res.status(400).json({ message: 'Student email is required' });
     }
 
     const normalizedEmail = String(studentEmail).trim().toLowerCase();
+    const cleanStudentName = studentName ? String(studentName).trim() : '';
 
     const existingScore = await Score.findOne({ studentEmail: normalizedEmail });
     if (existingScore) {
@@ -149,16 +158,18 @@ router.post('/submit-test', async (req, res) => {
     const scoreDoc = await Score.findOneAndUpdate(
       { studentEmail: normalizedEmail },
       {
+        studentName: cleanStudentName,
         score: totalScore,
         totalMarks: totalPossibleMarks,
         responses: responsesObj,
         isSubmitted: true
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, returnDocument: 'after', setDefaultsOnInsert: true }
     );
 
     const submissionDoc = await Submission.create({
       studentEmail: normalizedEmail,
+      studentName: cleanStudentName,
       responses: responsesObj,
       score: totalScore,
       totalMarks: totalPossibleMarks,
@@ -179,7 +190,7 @@ router.post('/submit-test', async (req, res) => {
   }
 });
 
-router.get('/submissions', async (req, res) => {
+router.get('/submissions', requireAdmin, async (req, res) => {
   try {
     const submissions = await Submission.find().sort({ createdAt: -1 });
     return res.status(200).json(submissions);
@@ -208,7 +219,7 @@ router.get('/scores/check/:email', async (req, res) => {
   }
 });
 
-router.delete('/scores/reset/:email', async (req, res) => {
+router.delete('/scores/reset/:email', requireAdmin, async (req, res) => {
   try {
     const email = String(req.params.email).trim().toLowerCase();
     const emailRegex = new RegExp(`^${email.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i');
@@ -221,7 +232,7 @@ router.delete('/scores/reset/:email', async (req, res) => {
   }
 });
 
-router.get('/scores', async (req, res) => {
+router.get('/scores', requireAdmin, async (req, res) => {
     try {
         const scores = await Score.find().sort({ score: -1 });
         res.status(200).json(scores);
@@ -231,7 +242,7 @@ router.get('/scores', async (req, res) => {
     }
 });
 
-router.post('/scores/bulk', async (req, res) => {
+router.post('/scores/bulk', requireAdmin, async (req, res) => {
   try {
     const scores = Array.isArray(req.body) ? req.body : req.body?.scores;
 

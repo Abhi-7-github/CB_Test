@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:1000'; 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:1000';
 
 
 const API_ENDPOINTS = {
@@ -11,6 +11,7 @@ const API_ENDPOINTS = {
   checkScore: (email) => `${API_BASE_URL}/api/scores/check/${encodeURIComponent(email)}`,
   resetScore: (email) => `${API_BASE_URL}/api/scores/reset/${encodeURIComponent(email)}`,
   testStatus: `${API_BASE_URL}/api/test-status`,
+  deleteAllQuestions: `${API_BASE_URL}/api/questions/all`,
 }
 
 export { API_BASE_URL, API_ENDPOINTS }

@@ -1,0 +1,1102 @@
+[
+  {
+    "_id": "6ac388580d0c728ad6b8f50d",
+    "id": "AGRIGEN_HARD_001",
+    "__v": 0,
+    "correctAnswer": "The training dataset may not represent the new region",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Random Forest cannot perform classification",
+      "The training dataset may not represent the new region",
+      "Accuracy can only be calculated for regression",
+      "The model must always be retrained every time a prediction is made"
+    ],
+    "text": "A crop recommendation model achieves very high accuracy on its test set, but performs poorly when used in another region. Which explanation is most consistent with the AGRIGEN-ML material?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f50e",
+    "id": "AGRIGEN_HARD_002",
+    "__v": 0,
+    "correctAnswer": "X contains the seven measurements and y contains the crop label",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "X contains only the crop label and y contains environmental measurements",
+      "X contains the seven measurements and y contains the crop label",
+      "X and y both contain the crop label",
+      "X contains the crop label and y contains only N, P and K"
+    ],
+    "text": "A dataset contains N, P, K, temperature, humidity, pH, rainfall and a crop label. If the goal is to predict the crop label, which statement correctly describes X and y?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f50f",
+    "id": "AGRIGEN_HARD_003",
+    "__v": 0,
+    "correctAnswer": "The evaluation would not represent performance on unseen examples",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The model would never be able to calculate accuracy",
+      "The evaluation would not represent performance on unseen examples",
+      "Random Forest requires exactly two datasets",
+      "Training data cannot contain labels"
+    ],
+    "text": "Why would using the same dataset for both model training and final evaluation give a potentially misleading result?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f510",
+    "id": "AGRIGEN_HARD_004",
+    "__v": 0,
+    "correctAnswer": "To preserve class proportions when appropriate",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "To remove missing values from the dataset",
+      "To preserve class proportions when appropriate",
+      "To increase the number of features",
+      "To convert classification into regression"
+    ],
+    "text": "The workshop uses stratify=y during train_test_split. What is the intended reason for this choice?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f511",
+    "id": "AGRIGEN_HARD_005",
+    "__v": 0,
+    "correctAnswer": "The model's prediction changed under the modified input",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Rainfall is biologically proven to cause the predicted crop",
+      "The model's prediction changed under the modified input",
+      "Rainfall is always the most important feature",
+      "The model has become more accurate"
+    ],
+    "text": "A participant changes rainfall in a new field input and obtains a different crop prediction. What can be concluded directly from this experiment?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f512",
+    "id": "AGRIGEN_HARD_006",
+    "__v": 0,
+    "correctAnswer": "Feature importance describes how the model uses features, not necessarily biological cause-and-effect relationships",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Feature importance describes how the model uses features, not necessarily biological cause-and-effect relationships",
+      "Feature importance cannot be calculated for Random Forest",
+      "Biological relationships are always independent of data",
+      "Feature importance is the same as accuracy"
+    ],
+    "text": "Why does the workshop explicitly warn that feature importance is not proof of biological causation?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f513",
+    "id": "AGRIGEN_HARD_007",
+    "__v": 0,
+    "correctAnswer": "Testing across dates, seasons or regions where possible",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Using only a confusion matrix",
+      "Testing across dates, seasons or regions where possible",
+      "Increasing the number of CSV columns",
+      "Removing the target variable"
+    ],
+    "text": "Suppose a model performs well on randomly split test data but poorly when evaluated across a different season. Which validation concern from the AGRIGEN-ML guide becomes particularly important?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f514",
+    "id": "AGRIGEN_HARD_008",
+    "__v": 0,
+    "correctAnswer": "Chronological validation without future-data leakage",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Randomly mix all future and past observations",
+      "Chronological validation without future-data leakage",
+      "Use only the training data for evaluation",
+      "Use clustering instead of validation"
+    ],
+    "text": "A researcher wants to predict future sensor readings using previous measurements ordered by time. Which validation strategy is most appropriate according to the AGRIGEN-ML guide?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f515",
+    "id": "AGRIGEN_HARD_009",
+    "__v": 0,
+    "correctAnswer": "First is classification and second is regression",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Both are classification",
+      "First is classification and second is regression",
+      "First is regression and second is classification",
+      "Both are clustering"
+    ],
+    "text": "A system predicts whether a crop belongs to rice, maize or cotton. Another system predicts expected crop yield in kilograms. Which pairing is correct?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f516",
+    "id": "AGRIGEN_HARD_010",
+    "__v": 0,
+    "correctAnswer": "Clustering",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Regression",
+      "Classification",
+      "Clustering",
+      "Computer vision"
+    ],
+    "text": "A farmer-management system divides a farm into groups of similar zones without predefined zone labels. Which ML task from the PPT best matches this requirement?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f517",
+    "id": "AGRIGEN_HARD_011",
+    "__v": 0,
+    "correctAnswer": "Multimodal AI for Agriculture",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Multimodal AI for Agriculture",
+      "Only Satellite Image-Based Crop Classification",
+      "Only Plant Growth Prediction",
+      "Only Digital Twin"
+    ],
+    "text": "A crop-monitoring system receives leaf images, NPK values, weather information and farmer questions. Which project architecture most directly matches the AGRIGEN-ML description?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f518",
+    "id": "AGRIGEN_HARD_012",
+    "__v": 0,
+    "correctAnswer": "LLM + RAG + classification/regression/vision tools",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "LLM + RAG + classification/regression/vision tools",
+      "Random Forest without any language component",
+      "Only a relational database",
+      "Only a CNN"
+    ],
+    "text": "An agricultural assistant needs to answer farmer questions while also calling specialized prediction models. Which architecture is most consistent with AgriGPT?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f519",
+    "id": "AGRIGEN_HARD_013",
+    "__v": 0,
+    "correctAnswer": "The specialized ML model",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The specialized ML model",
+      "The user interface",
+      "The database",
+      "The language model alone"
+    ],
+    "text": "A system provides a natural-language explanation of a crop prediction. According to the AGRIGEN-ML material, which component should primarily handle the structured prediction?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f51a",
+    "id": "AGRIGEN_HARD_014",
+    "__v": 0,
+    "correctAnswer": "IoT data streams + ML classification/regression/anomaly detection",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "IoT data streams + ML classification/regression/anomaly detection",
+      "Static CSV + manual calculations only",
+      "LLM alone without sensor data",
+      "Satellite images only"
+    ],
+    "text": "A farm monitoring platform receives continuous temperature, humidity and soil-moisture streams and must generate anomaly alerts. Which combination best matches the proposed approach?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f51b",
+    "id": "AGRIGEN_HARD_015",
+    "__v": 0,
+    "correctAnswer": "What-if scenario analysis",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "What-if scenario analysis",
+      "Classification label encoding",
+      "Confusion-matrix analysis",
+      "Feature deletion"
+    ],
+    "text": "A Digital Twin system is asked: 'What happens to the predicted farm state if irrigation is changed?' What capability from the PPT is being used?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f51c",
+    "id": "AGRIGEN_HARD_016",
+    "__v": 0,
+    "correctAnswer": "CNN/transfer learning for diagnosis and RAG/LLM for explanation",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "CNN/transfer learning for diagnosis and RAG/LLM for explanation",
+      "LLM for diagnosis and Random Forest for explanation",
+      "RAG for image classification and CNN for language generation",
+      "Database for diagnosis and FastAPI for explanation"
+    ],
+    "text": "A disease-diagnosis system predicts a disease class from a leaf image and then provides an educational explanation. Which division of responsibility best matches the PPT?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f51d",
+    "id": "AGRIGEN_HARD_017",
+    "__v": 0,
+    "correctAnswer": "The project can use temporal information from repeated imagery",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The project can use temporal information from repeated imagery",
+      "Date automatically determines the crop label",
+      "Date replaces all spectral features",
+      "Date converts the problem into clustering"
+    ],
+    "text": "A crop classification project uses multispectral satellite bands, NDVI, field labels, location and date. Why is including the date potentially useful according to the project description?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f51e",
+    "id": "AGRIGEN_HARD_018",
+    "__v": 0,
+    "correctAnswer": "The model has difficulty distinguishing those classes",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The two crops are biologically identical",
+      "The model has difficulty distinguishing those classes",
+      "The dataset contains no labels",
+      "The model must be converted to regression"
+    ],
+    "text": "A model's confusion matrix shows that two crop classes are frequently mistaken for each other. What does this result directly tell you?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f51f",
+    "id": "AGRIGEN_HARD_019",
+    "__v": 0,
+    "correctAnswer": "It provides class-level precision, recall and F1-score",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "It provides class-level precision, recall and F1-score",
+      "It automatically improves the model",
+      "It replaces the training dataset",
+      "It converts classification into regression"
+    ],
+    "text": "A participant reports only overall accuracy for an agricultural classification model. Why might the classification report provide additional useful information?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f520",
+    "id": "AGRIGEN_HARD_020",
+    "__v": 0,
+    "correctAnswer": "Data validation and cleaning",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Data validation and cleaning",
+      "Deployment",
+      "Prediction",
+      "Monitoring only"
+    ],
+    "text": "A dataset contains sensor errors, incorrect units and mislabeled crop classes. Which stage of the common ML workflow should address these problems before model training?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f521",
+    "id": "AGRIGEN_HARD_021",
+    "__v": 0,
+    "correctAnswer": "Collect feedback and monitor/improve the model",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Collect feedback and monitor/improve the model",
+      "Delete the test set",
+      "Remove the target variable",
+      "Stop collecting input data"
+    ],
+    "text": "A model is deployed to farmers but its prediction quality changes over time. Which part of the AGRIGEN-ML pipeline becomes especially important after deployment?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f522",
+    "id": "AGRIGEN_HARD_022",
+    "__v": 0,
+    "correctAnswer": "Class-level precision, recall and F1-score",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Class-level precision, recall and F1-score",
+      "Number of Python files",
+      "Number of database records",
+      "Number of model features alone"
+    ],
+    "text": "Two crop recommendation models have similar accuracy. One consistently produces incorrect predictions for an important crop class. Which evaluation approach from the PPT is more informative than accuracy alone?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f523",
+    "id": "AGRIGEN_HARD_023",
+    "__v": 0,
+    "correctAnswer": "Profitability must be demonstrated using field and economic evidence",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The claim is justified because accuracy directly equals profit",
+      "Profitability must be demonstrated using field and economic evidence",
+      "Accuracy guarantees higher yield",
+      "Profit cannot be measured in agriculture"
+    ],
+    "text": "A researcher wants to claim that an ML system increases farmer profit because it has 95% test accuracy. Which response is most consistent with the AGRIGEN-ML guide?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f524",
+    "id": "AGRIGEN_HARD_024",
+    "__v": 0,
+    "correctAnswer": "Net margin",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Net margin",
+      "Number of model layers",
+      "Number of Python imports",
+      "Number of dashboard buttons"
+    ],
+    "text": "Which measurement would be most directly useful when evaluating the economic value of an ML-assisted agricultural process?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f525",
+    "id": "AGRIGEN_HARD_025",
+    "__v": 0,
+    "correctAnswer": "Show meaningful uncertainty and allow users to report incorrect results",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Show meaningful uncertainty and allow users to report incorrect results",
+      "Increase the number of decision trees only",
+      "Remove local language support",
+      "Hide all prediction information"
+    ],
+    "text": "A farmer-facing ML application provides a prediction but hides uncertainty and gives no way to report incorrect results. Which farmer-centered design principles from the PPT are being missed?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f526",
+    "id": "AGRIGEN_HARD_026",
+    "__v": 0,
+    "correctAnswer": "The prediction input does not contain the same features expected during training",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The prediction input does not contain the same features expected during training",
+      "Random Forest only accepts three features",
+      "Rainfall cannot be used in agriculture",
+      "The target variable must be added twice"
+    ],
+    "text": "A participant enters an input containing only N, P, K and rainfall into a model trained with seven features. What is the fundamental problem?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f527",
+    "id": "AGRIGEN_HARD_027",
+    "__v": 0,
+    "correctAnswer": "The model's prediction did not change for that particular input modification",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The model's prediction did not change for that particular input modification",
+      "pH has no biological effect on crops",
+      "pH is completely ignored by Random Forest",
+      "pH can never influence a crop prediction"
+    ],
+    "text": "A participant changes pH while keeping all other values fixed and observes no change in the predicted crop. Which conclusion is safest based on the workshop?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f528",
+    "id": "AGRIGEN_HARD_028",
+    "__v": 0,
+    "correctAnswer": "AI-Powered Agricultural Decision Support System",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "AI-Powered Agricultural Decision Support System",
+      "Only Satellite Image-Based Crop Classification",
+      "Only Plant Growth Prediction",
+      "Only Crop Disease Diagnosis"
+    ],
+    "text": "A team wants to build a single agricultural dashboard containing crop prediction, disease screening and irrigation insights. Which project concept most directly supports this design?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f529",
+    "id": "AGRIGEN_HARD_029",
+    "__v": 0,
+    "correctAnswer": "Problem → Data → Validation → Cleaning → Features → Train/Test → Model → Evaluation → Interface → Monitoring",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Problem → Data → Validation → Cleaning → Features → Train/Test → Model → Evaluation → Interface → Monitoring",
+      "Model → Deployment → Data → Problem → Evaluation",
+      "Interface → Model → Data → Cleaning → Problem",
+      "Prediction → Deployment → Dataset → Target → Training"
+    ],
+    "text": "Which sequence best represents the complete ML pipeline described across the AGRIGEN-ML material?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388580d0c728ad6b8f52a",
+    "id": "AGRIGEN_HARD_030",
+    "__v": 0,
+    "correctAnswer": "Validate it across relevant fields, seasons or regions and compare predictions with real outcomes",
+    "createdAt": "2026-10-05T11:21:57.402Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Validate it across relevant fields, seasons or regions and compare predictions with real outcomes",
+      "Assume high test accuracy guarantees field success",
+      "Remove uncertainty from the predictions",
+      "Stop collecting feedback after deployment"
+    ],
+    "text": "A team wants to deploy an agricultural ML system in a real farm after achieving strong test performance. Which action is MOST consistent with the AGRIGEN-ML guide before treating the system as reliable?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:21:57.402Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f53d",
+    "id": "AGRIGEN_HARD_031",
+    "__v": 0,
+    "correctAnswer": "The training data may not represent the conditions of the second region",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The model has no target variable",
+      "The training data may not represent the conditions of the second region",
+      "Random Forest cannot process environmental features",
+      "The model should use clustering instead"
+    ],
+    "text": "A team trains a crop recommendation model using data collected only from one region. It performs well locally but poorly in another region. Which issue best explains this?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f53e",
+    "id": "AGRIGEN_HARD_032",
+    "__v": 0,
+    "correctAnswer": "Time-series ML",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Classification",
+      "Regression only without considering time",
+      "Time-series ML",
+      "Clustering"
+    ],
+    "text": "A team wants to predict rainfall for the next seven days using historical rainfall observations ordered by date. Which ML category from the AGRIGEN-ML guide is the best match?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f53f",
+    "id": "AGRIGEN_HARD_033",
+    "__v": 0,
+    "correctAnswer": "Digital Twin for Smart Farming",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Digital Twin for Smart Farming",
+      "Satellite Image-Based Crop Classification",
+      "Crop Disease Diagnosis",
+      "AgriGPT"
+    ],
+    "text": "A farm system predicts the current field condition and then simulates what could happen if irrigation or rainfall assumptions change. Which project concept combines these two capabilities?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f540",
+    "id": "AGRIGEN_HARD_034",
+    "__v": 0,
+    "correctAnswer": "FastAPI or Flask",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "FastAPI or Flask",
+      "Matplotlib",
+      "pandas",
+      "Jupyter Notebook only"
+    ],
+    "text": "A developer wants to expose an agricultural ML model so that a web application can send inputs and receive predictions. Which backend technology is suggested in the AGRIGEN-ML implementation architecture?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f541",
+    "id": "AGRIGEN_HARD_035",
+    "__v": 0,
+    "correctAnswer": "LSTM",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "LSTM",
+      "K-Means",
+      "Decision Tree only",
+      "Naive Bayes"
+    ],
+    "text": "A model predicts plant growth from repeated measurements collected over time. Which model family is specifically suggested for sequence-based growth prediction?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f542",
+    "id": "AGRIGEN_HARD_036",
+    "__v": 0,
+    "correctAnswer": "Management zones or field health/yield maps",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Management zones or field health/yield maps",
+      "A conversational chatbot only",
+      "A disease class for every leaf",
+      "A single crop name for the entire farm"
+    ],
+    "text": "A precision agriculture system has GPS-tagged sensor readings and yield maps. What is the most appropriate type of output described in the PPT?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f543",
+    "id": "AGRIGEN_HARD_037",
+    "__v": 0,
+    "correctAnswer": "GIS and temporal models",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "GIS and temporal models",
+      "Removing field labels",
+      "Replacing all imagery with text",
+      "Using only a confusion matrix"
+    ],
+    "text": "A satellite-based crop classification model receives spectral features but ignores the location and date associated with the observations. Which advanced capability from the project could potentially improve the system?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f544",
+    "id": "AGRIGEN_HARD_038",
+    "__v": 0,
+    "correctAnswer": "LLM + RAG + ML API/tool",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "LLM + RAG + ML API/tool",
+      "Random Forest + matplotlib only",
+      "MongoDB + CSS only",
+      "CNN + confusion matrix only"
+    ],
+    "text": "An agricultural assistant receives a farmer's question, retrieves information from a knowledge base, and calls an ML model for a prediction. Which combination best represents this workflow?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f545",
+    "id": "AGRIGEN_HARD_039",
+    "__v": 0,
+    "correctAnswer": "Different data modalities can provide complementary information",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Different data modalities can provide complementary information",
+      "Images are always more accurate than sensors",
+      "Sensors should never be used with computer vision",
+      "The system has automatically become causal"
+    ],
+    "text": "A multimodal agriculture system produces different results when given only a leaf image versus a leaf image combined with sensor data. What is the main idea being demonstrated?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f546",
+    "id": "AGRIGEN_HARD_040",
+    "__v": 0,
+    "correctAnswer": "Converting raw sensor streams into actionable predictions",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Converting raw sensor streams into actionable predictions",
+      "Replacing the sensors",
+      "Removing the need for data collection",
+      "Converting all sensor data into images"
+    ],
+    "text": "A smart agriculture monitoring system receives temperature, humidity, pH and soil-moisture streams. Instead of merely displaying these values, it predicts an abnormal condition. What role is ML playing?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f547",
+    "id": "AGRIGEN_HARD_041",
+    "__v": 0,
+    "correctAnswer": "Extreme-value what-if analysis",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Extreme-value what-if analysis",
+      "Deleting the target column",
+      "Increasing the test size to 100%",
+      "Removing feature names"
+    ],
+    "text": "A participant notices that a crop recommendation changes drastically when an input is slightly outside the range seen during training. Which workshop activity specifically helps investigate this behavior?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f548",
+    "id": "AGRIGEN_HARD_042",
+    "__v": 0,
+    "correctAnswer": "Incorrect units can create misleading patterns for the model",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Incorrect units can create misleading patterns for the model",
+      "Random Forest cannot accept rainfall",
+      "Units determine the target label automatically",
+      "Incorrect units only affect the user interface"
+    ],
+    "text": "Suppose the crop recommendation dataset contains incorrect units for rainfall. Why should this be addressed before model training?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f549",
+    "id": "AGRIGEN_HARD_043",
+    "__v": 0,
+    "correctAnswer": "The model may learn the wrong relationship between inputs and crops",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The model may learn the wrong relationship between inputs and crops",
+      "The model automatically corrects every label",
+      "The number of features will increase",
+      "The test set becomes unnecessary"
+    ],
+    "text": "A dataset contains incorrect crop labels. What is the most likely consequence described in the workshop?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f54a",
+    "id": "AGRIGEN_HARD_044",
+    "__v": 0,
+    "correctAnswer": "Compare the ML-assisted process with existing practice using measurable field and economic indicators",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Compare the ML-assisted process with existing practice using measurable field and economic indicators",
+      "Compare the number of decision trees",
+      "Compare the number of dashboard screens",
+      "Compare only training accuracy"
+    ],
+    "text": "A researcher wants to determine whether an agricultural model is useful economically rather than merely accurate statistically. Which comparison is most appropriate?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f54b",
+    "id": "AGRIGEN_HARD_045",
+    "__v": 0,
+    "correctAnswer": "Use simple language, local units and support appropriate local-language/low-connectivity workflows",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Use simple language, local units and support appropriate local-language/low-connectivity workflows",
+      "Use only technical ML terminology",
+      "Hide uncertainty from users",
+      "Require high-speed connectivity for every prediction"
+    ],
+    "text": "A farmer-facing application is intended for users with limited connectivity and different literacy levels. Which design principle from the AGRIGEN-ML guide is most appropriate?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f54c",
+    "id": "AGRIGEN_HARD_046",
+    "__v": 0,
+    "correctAnswer": "The system should communicate meaningful uncertainty and retain expert review for high-impact decisions",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The system should communicate meaningful uncertainty and retain expert review for high-impact decisions",
+      "The system should always present the prediction as certain",
+      "The model should automatically prescribe treatment",
+      "The uncertainty should be hidden from the farmer"
+    ],
+    "text": "A disease prediction model produces a low-confidence result for a leaf image. What is the most responsible interpretation based on the farmer-centered design principles?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f54d",
+    "id": "AGRIGEN_HARD_047",
+    "__v": 0,
+    "correctAnswer": "Feedback and monitoring",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Feedback and monitoring",
+      "Feature selection",
+      "Problem definition",
+      "Initial data collection"
+    ],
+    "text": "A team builds a model, evaluates it on unseen data, deploys it, and then stops collecting prediction outcomes. Which important part of the AGRIGEN-ML pipeline has been omitted?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f54e",
+    "id": "AGRIGEN_HARD_048",
+    "__v": 0,
+    "correctAnswer": "The model may interpret values as different features from those used during training",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "The model may interpret values as different features from those used during training",
+      "Random Forest automatically detects the mistake",
+      "The model will always return the same crop",
+      "Only the visualization will be affected"
+    ],
+    "text": "A crop recommendation model uses N, P, K, temperature, humidity, pH and rainfall. A developer accidentally changes the order and meaning of the input columns during prediction. Why is this dangerous?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f54f",
+    "id": "AGRIGEN_HARD_049",
+    "__v": 0,
+    "correctAnswer": "Multiple specialized ML models integrated through a decision-support layer",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "Multiple specialized ML models integrated through a decision-support layer",
+      "One Random Forest model trained only on rainfall",
+      "A database without ML models",
+      "A confusion matrix connected directly to the farmer"
+    ],
+    "text": "A team wants to build an agricultural system that combines disease detection, soil analysis, weather information and crop prediction into one farmer-facing interface. Which architecture most closely matches the AGRIGEN-ML decision-support concept?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  },
+  {
+    "_id": "6ac388dc0d0c728ad6b8f550",
+    "id": "AGRIGEN_HARD_050",
+    "__v": 0,
+    "correctAnswer": "ML outputs require field validation, domain expertise and economic measurement before real-world claims are made",
+    "createdAt": "2026-10-05T11:24:10.066Z",
+    "fileUpload": {
+      "accept": [],
+      "maxSizeMb": 5,
+      "required": false
+    },
+    "marks": 2,
+    "options": [
+      "ML outputs require field validation, domain expertise and economic measurement before real-world claims are made",
+      "Historical data always guarantees future agricultural performance",
+      "Model accuracy is equivalent to farmer profit",
+      "A test score eliminates the need for field validation"
+    ],
+    "text": "A team claims that because its agricultural model performs well on historical data, it will automatically guarantee higher yield and profit. Which statement best contradicts this claim?",
+    "type": "mcq",
+    "updatedAt": "2026-10-05T11:24:10.066Z"
+  }
+]

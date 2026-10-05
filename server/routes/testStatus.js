@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
       {},
       { $setOnInsert: { isTestActive: false } },
       {
-        new: true,
+        returnDocument: 'after',
         upsert: true,
         setDefaultsOnInsert: true,
         sort: { createdAt: 1 },
@@ -26,7 +26,15 @@ router.get('/', async (req, res) => {
 });
 
 
-router.post('/', async (req, res) => {
+function requireAdmin(req, res, next) {
+  const adminKey = req.header('x-admin-key');
+  if (!process.env.ADMIN_KEY || adminKey !== process.env.ADMIN_KEY) {
+    return res.status(403).json({ message: 'Admin access required' });
+  }
+  return next();
+}
+
+router.post('/', requireAdmin, async (req, res) => {
   const { isTestActive } = req.body;
   if (typeof isTestActive !== 'boolean') {
     return res.status(400).json({ message: 'isTestActive must be a boolean' });
@@ -37,7 +45,7 @@ router.post('/', async (req, res) => {
       {},
       { $set: { isTestActive } },
       {
-        new: true,
+        returnDocument: 'after',
         upsert: true,
         setDefaultsOnInsert: true,
         sort: { createdAt: 1 },

@@ -39,9 +39,13 @@ export default function AdminNavbar() {
   const toggleTestStatus = async () => {
     try {
       setLoading(true)
+      const adminKey = localStorage.getItem('adminKey') || ''
       const res = await fetch(API_ENDPOINTS.testStatus, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-admin-key': adminKey
+        },
         body: JSON.stringify({ isTestActive: !isTestActive })
       })
       if (!res.ok) {

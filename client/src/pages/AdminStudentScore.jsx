@@ -1,14 +1,23 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import AdminNavbar from '../components/AdminNavbar'
 import { API_ENDPOINTS } from '../api'
 
 function AdminStudentScore() {
+  const navigate = useNavigate()
   const [studentData, setStudentData] = useState([])
   const [scores, setScores] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
 
   useEffect(() => {
+    const verified = localStorage.getItem('adminVerified') === 'true'
+    const key = localStorage.getItem('adminKey') || ''
+    if (!verified || !key) {
+      navigate('/admin', { replace: true })
+      return
+    }
+
     const loadStudentData = async () => {
       try {
         const res = await fetch('/data/studentdata.json')
@@ -21,15 +30,18 @@ function AdminStudentScore() {
       }
     }
     loadStudentData()
-  }, [])
+  }, [navigate])
 
   useEffect(() => {
     const fetchScores = async () => {
       setLoading(true)
       try {
         let serverScores = []
+        const adminKey = localStorage.getItem('adminKey') || ''
         try {
-          const response = await fetch(API_ENDPOINTS.scores)
+          const response = await fetch(API_ENDPOINTS.scores, {
+            headers: adminKey ? { 'x-admin-key': adminKey } : {}
+          })
           if (response.ok) {
             serverScores = await response.json()
           }
@@ -96,7 +108,7 @@ function AdminStudentScore() {
       const email = student.email ? String(student.email).trim().toLowerCase() : ''
       const score = scoreMap.get(email)
       return {
-        teamName: student.teamName || 'N/A',
+        name: student.name || score?.studentName || 'N/A',
         email: student.email,
         score: score,
       }
@@ -121,7 +133,7 @@ function AdminStudentScore() {
   const downloadCSV = () => {
     if (!mergedRows.length) return
 
-    const headers = ['Team Name', 'Student Email', 'Score', 'Total Marks', 'Percentage', 'Exam Finished Time']
+    const headers = ['Student Name', 'Student Email', 'Score', 'Total Marks', 'Percentage', 'Exam Finished Time']
     const rows = mergedRows.map((row) => {
       const scoreVal = row.score ? row.score.score : 'N/A'
       const totalMarksVal = row.score ? row.score.totalMarks : 'N/A'
@@ -129,7 +141,7 @@ function AdminStudentScore() {
       const finishedTimeVal = formatFinishTime(row.score)
 
       return [
-        `"${row.teamName.replace(/"/g, '""')}"`,
+        `"${row.name.replace(/"/g, '""')}"`,
         `"${row.email ? row.email.replace(/"/g, '""') : ''}"`,
         `"${scoreVal}"`,
         `"${totalMarksVal}"`,
@@ -168,8 +180,10 @@ function AdminStudentScore() {
     }
 
     try {
+      const adminKey = localStorage.getItem('adminKey') || ''
       const response = await fetch(API_ENDPOINTS.resetScore(cleanEmail), {
         method: 'DELETE',
+        headers: adminKey ? { 'x-admin-key': adminKey } : {}
       })
       if (!response.ok) {
         console.warn('Server score reset failed:', response.statusText)
@@ -230,7 +244,7 @@ function AdminStudentScore() {
               <thead className="bg-[#FAF8F2] text-[#0D1B2A]">
                 <tr>
                   <th scope="col" className="px-5 py-3.5 font-bold uppercase tracking-wider">
-                    Team Name
+                    Student Name
                   </th>
                   <th scope="col" className="px-5 py-3.5 font-bold uppercase tracking-wider">
                     Student Email
@@ -260,7 +274,7 @@ function AdminStudentScore() {
                 {mergedRows.map((row) => (
                   <tr key={row.email} className="hover:bg-[#FAF8F2]/60 transition-colors">
                     <td className="px-5 py-3.5 font-bold text-[#0D1B2A]">
-                      {row.teamName}
+                      {row.name}
                     </td>
                     <td className="px-5 py-3.5 text-[#415A77]">
                       {row.email}

@@ -32,8 +32,12 @@ function AdminTestReset() {
     setResetStatus({ type: 'idle', message: '' })
 
     try {
+      const adminKey = localStorage.getItem('adminKey') || ''
       const res = await fetch(API_ENDPOINTS.resetScore(cleanEmail), {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: {
+          'x-admin-key': adminKey
+        }
       })
       if (res.ok) {
         setResetStatus({

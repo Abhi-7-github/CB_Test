@@ -49,8 +49,8 @@ function StudentLogin() {
       if (match) {
         localStorage.setItem('studentVerified', 'true')
         localStorage.setItem('studentEmail', email)
-        if (match.teamName) {
-          localStorage.setItem('teamName', match.teamName)
+        if (match.name) {
+          localStorage.setItem('studentName', match.name)
         }
         localStorage.removeItem('systemCheckPassed')
         window.dispatchEvent(new Event('student-verified'))
@@ -69,7 +69,7 @@ function StudentLogin() {
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-[#F4F1DE] px-4 py-12">
       <div className="w-full max-w-md rounded-2xl border border-[#0D1B2A]/10 bg-[#FFFFFF] p-8 shadow-sm transition-all duration-200">
-        
+
         {/* Academic / Portal Badge */}
         <div className="mb-6 flex items-center justify-between border-b border-[#0D1B2A]/10 pb-4">
           <div className="flex items-center gap-3">
@@ -137,22 +137,21 @@ function StudentLogin() {
         {/* Status Notification */}
         {status.message && (
           <div
-            className={`mt-5 rounded-xl border p-3.5 text-xs font-medium leading-relaxed transition-all duration-200 ${
-              status.type === 'success'
+            className={`mt-5 rounded-xl border p-3.5 text-xs font-medium leading-relaxed transition-all duration-200 ${status.type === 'success'
                 ? 'border-[#778D7A]/40 bg-[#EDF2EE] text-[#1B263B]'
                 : 'border-[#9E2A2B]/20 bg-[#FBEAEA] text-[#782828]'
-            }`}
+              }`}
           >
             <div className="flex items-start gap-2">
               {status.type === 'success' ? (
                 <svg className="h-4 w-4 shrink-0 text-[#778D7A] mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12"/>
+                  <polyline points="20 6 9 17 4 12" />
                 </svg>
               ) : (
                 <svg className="h-4 w-4 shrink-0 text-[#9E2A2B] mt-0.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10"/>
-                  <line x1="12" y1="8" x2="12" y2="12"/>
-                  <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               )}
               <span>{status.message}</span>

@@ -20,6 +20,7 @@ function StudentQuestions() {
   const [fileInputs, setFileInputs] = useState({})
   const [uploadStatus, setUploadStatus] = useState({})
   const [studentEmail, setStudentEmail] = useState(() => localStorage.getItem('studentEmail') || '')
+  const [studentName, setStudentName] = useState(() => localStorage.getItem('studentName') || '')
   const [isSubmitted, setIsSubmitted] = useState(false)
   const [submitStatus, setSubmitStatus] = useState({ type: 'idle', message: '' })
   const [answers, setAnswers] = useState({})
@@ -34,15 +35,14 @@ function StudentQuestions() {
   const [isTestActive, setIsTestActive] = useState(false)
   const [statusChecked, setStatusChecked] = useState(false)
   const [hasStartedExam, setHasStartedExam] = useState(false)
+  const [submissionReason, setSubmissionReason] = useState('')
 
   // Use refs for checking conditions inside event listeners without dependency issues
   const isTestActiveRef = useRef(false)
   const hasStartedExamRef = useRef(false)
-
-  useEffect(() => {
-    isTestActiveRef.current = isTestActive
-    hasStartedExamRef.current = hasStartedExam
-  }, [isTestActive, hasStartedExam])
+  const handleViolationRef = useRef(null)
+  const handleSubmitTestRef = useRef(null)
+  const fullscreenGracePeriodRef = useRef(0)
 
   useEffect(() => {
     // Question loading & jumbling
@@ -91,7 +91,7 @@ function StudentQuestions() {
 
       const handleTrackEnded = () => {
         if (hasStartedExamRef.current && !isSubmittedRef.current) {
-          handleViolation('Camera stream was stopped manually.')
+          handleViolationRef.current?.('Camera stream was stopped manually.')
         }
         setHasCameraStream(false)
       }
@@ -113,7 +113,7 @@ function StudentQuestions() {
 
       const handleTrackEnded = () => {
         if (hasStartedExamRef.current && !isSubmittedRef.current) {
-          handleViolation('Screen sharing was stopped manually.')
+          handleViolationRef.current?.('Screen sharing was stopped manually.')
         }
         setHasScreenStream(false)
       }
@@ -154,7 +154,7 @@ function StudentQuestions() {
         const isStreamActive = stream && stream.active && stream.getVideoTracks().length > 0 && stream.getVideoTracks()[0].readyState === 'live';
 
         if (!isStreamActive) {
-          handleViolation('Screen sharing was stopped or permission revoked.');
+          handleViolationRef.current?.('Screen sharing was stopped or permission revoked.');
         }
       }
     }
@@ -173,7 +173,9 @@ function StudentQuestions() {
 
   useEffect(() => {
     const email = localStorage.getItem('studentEmail') || ''
+    const name = localStorage.getItem('studentName') || ''
     setStudentEmail(email)
+    setStudentName(name)
 
     const systemCheckPassed = localStorage.getItem('systemCheckPassed') === 'true'
     if (!systemCheckPassed) {
@@ -192,12 +194,13 @@ function StudentQuestions() {
         })
         .catch((err) => console.warn('Failed to verify DB score on StudentQuestions mount:', err))
     }
-  }, [])
+  }, [navigate])
 
   const answersRef = useRef(answers)
   const fileInputsRef = useRef(fileInputs)
   const isSubmittedRef = useRef(isSubmitted)
   const studentEmailRef = useRef(studentEmail)
+  const studentNameRef = useRef(studentName)
   const isFilePickerOpenRef = useRef(false)
   const blurTimeoutRef = useRef(null)
   const examStartRef = useRef(null)
@@ -208,7 +211,8 @@ function StudentQuestions() {
     fileInputsRef.current = fileInputs
     isSubmittedRef.current = isSubmitted
     studentEmailRef.current = studentEmail
-  }, [answers, fileInputs, isSubmitted, studentEmail])
+    studentNameRef.current = studentName
+  }, [answers, fileInputs, isSubmitted, studentEmail, studentName])
 
   useEffect(() => {
     if (!hasStartedExam || isSubmitted) {
@@ -230,7 +234,7 @@ function StudentQuestions() {
 
       if (nextRemaining === 0 && !isSubmittedRef.current && !autoSubmitTriggeredRef.current) {
         autoSubmitTriggeredRef.current = true
-        handleSubmitTest(true, { useRefs: true, reason: 'Time is up. Auto-submitting test.' })
+        handleSubmitTestRef.current?.(true, { useRefs: true, reason: 'Time is up. Auto-submitting test.' })
       }
     }
 
@@ -252,22 +256,30 @@ function StudentQuestions() {
     return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
   }
 
-  const getFullscreenElement = () =>
-    document.fullscreenElement ||
-    document.webkitFullscreenElement ||
-    document.mozFullScreenElement ||
-    document.msFullscreenElement
+  const isFullscreenActive = () =>
+    Boolean(
+      document.fullscreenElement ||
+      document.webkitFullscreenElement ||
+      document.mozFullScreenElement ||
+      document.msFullscreenElement
+    )
 
-  const enterFullscreen = () => {
+  const enterFullscreen = async () => {
     const docEl = document.documentElement
-    if (docEl.requestFullscreen) {
-      docEl.requestFullscreen().catch(() => { })
-    } else if (docEl.mozRequestFullScreen) {
-      docEl.mozRequestFullScreen().catch(() => { })
-    } else if (docEl.webkitRequestFullscreen) {
-      docEl.webkitRequestFullscreen().catch(() => { })
-    } else if (docEl.msRequestFullscreen) {
-      docEl.msRequestFullscreen().catch(() => { })
+    try {
+      if (docEl.requestFullscreen) {
+        await docEl.requestFullscreen()
+      } else if (docEl.webkitRequestFullscreen) {
+        await docEl.webkitRequestFullscreen()
+      } else if (docEl.mozRequestFullScreen) {
+        await docEl.mozRequestFullScreen()
+      } else if (docEl.msRequestFullscreen) {
+        await docEl.msRequestFullscreen()
+      }
+      return true
+    } catch (err) {
+      console.warn('Fullscreen request failed:', err)
+      return false
     }
   }
 
@@ -276,15 +288,45 @@ function StudentQuestions() {
     if (isSubmittedRef.current || autoSubmitTriggeredRef.current) return
 
     autoSubmitTriggeredRef.current = true
-    handleSubmitTest(true, { useRefs: true, reason })
+    setSubmissionReason(reason)
+    handleSubmitTestRef.current?.(true, { useRefs: true, reason })
   }
+
+  // Synchronize mutable refs every render for event handlers
+  isTestActiveRef.current = isTestActive
+  hasStartedExamRef.current = hasStartedExam
+  handleViolationRef.current = handleViolation
+  handleSubmitTestRef.current = handleSubmitTest
+  answersRef.current = answers
+  fileInputsRef.current = fileInputs
+  isSubmittedRef.current = isSubmitted
+  studentEmailRef.current = studentEmail
+  studentNameRef.current = studentName
+
+  // Continuous Fullscreen Integrity Monitor
+  useEffect(() => {
+    if (!hasStartedExam || isSubmitted) return
+
+    const checkFullscreen = () => {
+      if (!hasStartedExamRef.current || isSubmittedRef.current) return
+      if (Date.now() < (fullscreenGracePeriodRef.current || 0)) return
+
+      if (!isFullscreenActive()) {
+        handleViolationRef.current?.('Fullscreen mode is not active. Assessment automatically submitted.')
+      }
+    }
+
+    checkFullscreen()
+    const interval = setInterval(checkFullscreen, 400)
+    return () => clearInterval(interval)
+  }, [hasStartedExam, isSubmitted])
 
   // Anti-cheating & Security
   useEffect(() => {
     const handleBlur = () => {
       if (!isSubmittedRef.current && !isFilePickerOpenRef.current) {
         blurTimeoutRef.current = setTimeout(() => {
-          handleViolation('Tab switching or window focus lost.')
+          handleViolationRef.current?.('Tab switching or window focus lost.')
         }, 5000)
       }
     }
@@ -298,15 +340,26 @@ function StudentQuestions() {
     }
 
     const handleFullscreenChange = () => {
-      if (isTestActiveRef.current && hasStartedExamRef.current) {
-        if (!getFullscreenElement() && !isSubmittedRef.current) {
-          handleViolation('Fullscreen mode exited.')
+      if (hasStartedExamRef.current && !isSubmittedRef.current) {
+        if (Date.now() < (fullscreenGracePeriodRef.current || 0)) return
+        if (!isFullscreenActive()) {
+          handleViolationRef.current?.('Fullscreen mode exited. Assessment automatically submitted.')
+        }
+      }
+    }
+
+    const handleWindowResize = () => {
+      if (hasStartedExamRef.current && !isSubmittedRef.current) {
+        if (Date.now() < (fullscreenGracePeriodRef.current || 0)) return
+        if (!isFullscreenActive()) {
+          handleViolationRef.current?.('Fullscreen mode exited or window altered. Assessment automatically submitted.')
         }
       }
     }
 
     window.addEventListener('blur', handleBlur)
     window.addEventListener('focus', handleFocus)
+    window.addEventListener('resize', handleWindowResize)
 
     const handlePopState = (e) => {
       e.preventDefault()
@@ -362,6 +415,7 @@ function StudentQuestions() {
     return () => {
       window.removeEventListener('blur', handleBlur)
       window.removeEventListener('focus', handleFocus)
+      window.removeEventListener('resize', handleWindowResize)
       window.removeEventListener('popstate', handlePopState)
       window.removeEventListener('wheel', preventSwipe)
       window.removeEventListener('keydown', handleKeyDownRestrictions, true)
@@ -429,8 +483,14 @@ function StudentQuestions() {
           </p>
           <button
             type="button"
-            onClick={() => {
-              enterFullscreen()
+            onClick={async () => {
+              try {
+                await enterFullscreen()
+              } catch (e) {
+                console.warn('Enter fullscreen error:', e)
+              }
+              fullscreenGracePeriodRef.current = Date.now() + 1500
+              examStartRef.current = Date.now()
               setHasStartedExam(true)
             }}
             className="w-full rounded-xl bg-[#0D1B2A] py-3 text-sm font-semibold text-[#F4F1DE] shadow-xs transition-colors duration-200 hover:bg-[#1B263B] active:scale-[0.99]"
@@ -510,6 +570,7 @@ function StudentQuestions() {
   async function handleSubmitTest(forced = false, options = {}) {
     const { useRefs = false, reason = '', skipConfirm = false } = options
     const currentStudentEmail = useRefs ? studentEmailRef.current : studentEmail
+    const currentStudentName = useRefs ? studentNameRef.current : studentName
     const currentAnswers = useRefs ? answersRef.current : answers
     const currentFileInputs = useRefs ? fileInputsRef.current : fileInputs
     const currentIsSubmitted = useRefs ? isSubmittedRef.current : isSubmitted
@@ -537,14 +598,15 @@ function StudentQuestions() {
         }
       }
     } else {
-      const alertMessage = reason || 'Security violation detected. Auto-submitting test.'
-      alert(alertMessage)
+      if (reason) {
+        setSubmissionReason(reason)
+      }
     }
 
     setSubmitStatus({
       type: 'loading',
       message: forced
-        ? reason ? `Auto-submitting: ${reason}` : 'Auto-submitting session...'
+        ? (reason ? `Auto-submitting: ${reason}` : 'Auto-submitting assessment...')
         : 'Submitting assessment...',
     })
 
@@ -552,86 +614,36 @@ function StudentQuestions() {
       let resultScore = 0
       let resultTotal = questions.length
 
-      function resolveCorrectIndex(question) {
-        if (!question || !Array.isArray(question.options)) return null
-        const total = question.options.length
-        const raw = question.correctAnswer
-        if (raw === null || raw === undefined) return null
+      const response = await fetch(API_ENDPOINTS.submitTest, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          studentEmail: currentStudentEmail,
+          studentName: currentStudentName,
+          responses: currentAnswers
+        })
+      })
 
-        if (typeof raw === 'number' && Number.isFinite(raw)) {
-          if (raw >= 0 && raw < total) return raw
-          if (raw >= 1 && raw <= total) return raw - 1
-          return null
-        }
-
-        const text = String(raw).trim()
-        if (!text) return null
-
-        if (/^[A-Za-z]$/.test(text)) {
-          const idx = text.toUpperCase().charCodeAt(0) - 65
-          return idx >= 0 && idx < total ? idx : null
-        }
-
-        if (/^\d+$/.test(text)) {
-          const num = Number(text)
-          if (num >= 0 && num < total) return num
-          if (num >= 1 && num <= total) return num - 1
-          return null
-        }
-
-        const exactIdx = question.options.indexOf(text)
-        if (exactIdx !== -1) return exactIdx
-
-        const lowered = text.toLowerCase()
-        const ciIdx = question.options.findIndex((opt) => String(opt).toLowerCase() === lowered)
-        return ciIdx !== -1 ? ciIdx : null
+      if (response.status === 403) {
+        const errData = await response.json().catch(() => ({}))
+        setIsSubmitted(true)
+        setSubmitStatus({
+          type: 'error',
+          message: errData.message || 'Exam already submitted. You are not allowed to rewrite the exam.'
+        })
+        return
       }
 
-      try {
-        const response = await fetch(API_ENDPOINTS.submitTest, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            studentEmail: currentStudentEmail,
-            responses: currentAnswers
-          })
-        })
-
-        if (response.status === 403) {
-          const errData = await response.json().catch(() => ({}))
-          setIsSubmitted(true)
-          setSubmitStatus({
-            type: 'error',
-            message: errData.message || 'Exam already submitted. You are not allowed to rewrite the exam.'
-          })
-          return
-        }
-
-        if (response.ok) {
-          const resData = await response.json()
-          resultScore = resData.score !== undefined ? resData.score : 0
-          resultTotal = resData.totalMarks !== undefined ? resData.totalMarks : questions.length
-        } else {
-          questions.forEach(q => {
-            const qId = q._id || q.id
-            const correctIdx = resolveCorrectIndex(q)
-            if (currentAnswers[qId] !== undefined && correctIdx !== null && Number(currentAnswers[qId]) === Number(correctIdx)) {
-              resultScore += (q.marks || 1)
-            }
-          })
-        }
-      } catch (fetchErr) {
-        console.warn('Backend endpoint error, saving score locally:', fetchErr)
-        questions.forEach(q => {
-          const qId = q._id || q.id
-          const correctIdx = resolveCorrectIndex(q)
-          if (currentAnswers[qId] !== undefined && correctIdx !== null && Number(currentAnswers[qId]) === Number(correctIdx)) {
-            resultScore += (q.marks || 1)
-          }
-        })
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}))
+        throw new Error(errData.message || 'Failed to submit test to server.')
       }
+
+      const resData = await response.json()
+      resultScore = resData.score !== undefined ? resData.score : 0
+      resultTotal = resData.totalMarks !== undefined ? resData.totalMarks : questions.length
 
       const cleanEmail = currentStudentEmail.trim().toLowerCase()
       const scoreObj = {
@@ -658,6 +670,9 @@ function StudentQuestions() {
       setSubmitStatus({ type: 'success', message: 'Test submitted successfully!' })
     } catch (err) {
       console.error(err)
+      if (forced) {
+        setIsSubmitted(true)
+      }
       setSubmitStatus({ type: 'error', message: err.message })
     }
   }
@@ -835,8 +850,8 @@ function StudentQuestions() {
             {/* Student Chip */}
             <div className="hidden sm:flex items-center gap-2 rounded-xl border border-[#0D1B2A]/10 bg-white px-3 py-1.5">
               <div className="text-right">
-                <div className="text-xs font-bold text-[#0D1B2A] max-w-[140px] truncate">{studentEmail || 'student@klu.ac.in'}</div>
-                <div className="text-[10px] text-[#415A77] uppercase tracking-wider">Candidate</div>
+                <div className="text-xs font-bold text-[#0D1B2A] max-w-[140px] truncate">{studentName || studentEmail || 'student@klu.ac.in'}</div>
+                <div className="text-[10px] text-[#415A77] uppercase tracking-wider">{studentName ? studentEmail : 'Candidate'}</div>
               </div>
             </div>
 
@@ -906,7 +921,7 @@ function StudentQuestions() {
 
                 <div className="flex items-center gap-2 text-xs">
                   <span className="rounded-lg border border-[#778D7A]/30 bg-[#EDF2EE] px-2.5 py-1 font-bold text-[#415A77]">
-                    +1.0 Marks
+                    +{questions[currentQuestionIndex]?.marks || 1}.0 Marks
                   </span>
                   <span className="rounded-lg border border-[#D4C4A8]/60 bg-[#F7F3EA] px-2.5 py-1 font-bold text-[#415A77]">
                     0.0 Negative
@@ -1142,19 +1157,51 @@ function StudentQuestions() {
         )
       })()}
 
+      {/* Auto-submitting In-Progress Overlay */}
+      {!isSubmitted && submitStatus.type === 'loading' && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D1B2A]/75 backdrop-blur-xs p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-[#0D1B2A]/20 bg-white p-6 text-center shadow-2xl">
+            <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-3 border-[#D4C4A8] border-t-[#0D1B2A]" />
+            <h3 className="text-sm font-bold text-[#0D1B2A] mb-1">Submitting Assessment</h3>
+            <p className="text-xs text-[#415A77]">{submitStatus.message || 'Recording responses in database...'}</p>
+          </div>
+        </div>
+      )}
+
       {/* Submission Success Screen */}
       {isSubmitted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#F4F1DE]/95 p-4">
           <div className="w-full max-w-md rounded-2xl border border-[#0D1B2A]/10 bg-white p-8 text-center shadow-xl">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#EDF2EE] text-[#778D7A] border border-[#778D7A]/40">
-              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+            <div className={`mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl ${
+              submissionReason
+                ? 'bg-[#FBEAEA] text-[#9E2A2B] border border-[#9E2A2B]/40'
+                : 'bg-[#EDF2EE] text-[#778D7A] border border-[#778D7A]/40'
+            }`}>
+              {submissionReason ? (
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+              ) : (
+                <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
             </div>
-            <h2 className="text-xl font-bold text-[#0D1B2A] mb-1.5">Assessment Completed</h2>
+            <h2 className="text-xl font-bold text-[#0D1B2A] mb-1.5">
+              {submissionReason ? 'Assessment Auto-Submitted' : 'Assessment Completed'}
+            </h2>
             <p className="text-xs text-[#415A77] leading-relaxed mb-6">
-              Your examination responses have been securely transmitted and recorded in the database.
+              {submissionReason
+                ? `${submissionReason} Your responses have been saved and submitted to the evaluation system.`
+                : 'Your examination responses have been securely transmitted and recorded in the database.'}
             </p>
+            {submitStatus.type === 'error' && submitStatus.message && (
+              <div className="mb-4 rounded-xl border border-[#9E2A2B]/20 bg-[#FBEAEA] p-3 text-xs font-semibold text-[#782828]">
+                {submitStatus.message}
+              </div>
+            )}
             <button
               type="button"
               onClick={() => navigate('/')}

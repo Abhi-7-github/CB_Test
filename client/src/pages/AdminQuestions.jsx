@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { API_ENDPOINTS } from '../api'
 import TextField from '../components/TextField'
 import TextAreaField from '../components/TextAreaField'
@@ -30,15 +30,32 @@ function AdminQuestions() {
   const [verifying, setVerifying] = useState(false)
   const [_questions, setQuestions] = useState([])
 
+  const fetchQuestions = useCallback(async (keyOverride) => {
+    try {
+      const key = keyOverride || adminKey || localStorage.getItem('adminKey') || ''
+      const response = await fetch(API_ENDPOINTS.questions, {
+        headers: key ? { 'x-admin-key': key } : {}
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setQuestions(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch questions:', error)
+    }
+  }, [adminKey])
+
   useEffect(() => {
-    fetchQuestions()
     const storedVerified = localStorage.getItem('adminVerified') === 'true'
     const storedKey = localStorage.getItem('adminKey') || ''
     if (storedVerified && storedKey) {
       setIsVerified(true)
       setAdminKey(storedKey)
+      fetchQuestions(storedKey)
+    } else {
+      fetchQuestions()
     }
-  }, [])
+  }, [fetchQuestions])
 
   const resolveCorrectIndex = (question) => {
     if (!question || !Array.isArray(question.options)) return ''
@@ -94,18 +111,6 @@ function AdminQuestions() {
       setIsEditing(false)
     }
   }, [location.state])
-
-  const fetchQuestions = async () => {
-    try {
-      const response = await fetch(API_ENDPOINTS.questions)
-      if (response.ok) {
-        const data = await response.json()
-        setQuestions(data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch questions:', error)
-    }
-  }
 
   const handleChange = (field) => (event) => {
     setFormData((prev) => ({ ...prev, [field]: event.target.value }))

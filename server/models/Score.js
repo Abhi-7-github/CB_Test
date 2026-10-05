@@ -10,6 +10,11 @@ const ScoreSchema = new Schema(
       trim: true,
       lowercase: true,
     },
+    studentName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     score: {
       type: Number,
       required: true,

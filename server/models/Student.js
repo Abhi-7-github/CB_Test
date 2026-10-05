@@ -4,6 +4,11 @@ const { Schema, model } = mongoose;
 
 const StudentSchema = new Schema(
   {
+    name: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     role: {
       type: String,
       enum: ['student', 'admin'],

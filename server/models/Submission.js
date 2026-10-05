@@ -10,6 +10,11 @@ const SubmissionSchema = new Schema(
       trim: true,
       lowercase: true,
     },
+    studentName: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     question: {
       type: Schema.Types.ObjectId,
       ref: 'Question',
