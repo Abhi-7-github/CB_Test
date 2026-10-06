@@ -7,7 +7,6 @@ function SystemCheck() {
 
   // Initialize state from existing window streams if available (prevents double permission request on back nav)
   const [screenStream, setScreenStream] = useState(() => window.__proctoringStreams?.screenStream || null)
-  const [cameraStream, setCameraStream] = useState(() => window.__proctoringStreams?.cameraStream || null)
 
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [code, setCode] = useState(Array(6).fill(''))
@@ -17,7 +16,6 @@ function SystemCheck() {
   const [_isChrome, setIsChrome] = useState(true)
 
   const screenRef = useRef(null)
-  const cameraRef = useRef(null)
   const inputRefs = useRef([])
 
   useEffect(() => {
@@ -70,16 +68,13 @@ function SystemCheck() {
     if (screenStream && screenRef.current) {
       screenRef.current.srcObject = screenStream
     }
-    if (cameraStream && cameraRef.current) {
-      cameraRef.current.srcObject = cameraStream
-    }
 
     return () => {
       document.removeEventListener('fullscreenchange', handleFullscreenChange)
       window.removeEventListener('keydown', handleKeyDownRestrictions, true)
       window.removeEventListener('contextmenu', handleContextMenuRestrictions, true)
     }
-  }, [screenStream, cameraStream])
+  }, [screenStream])
 
   useEffect(() => {
     let ignore = false
@@ -109,29 +104,6 @@ function SystemCheck() {
 
     return () => { ignore = true }
   }, [])
-
-  // Camera & Microphone Access
-  const enableCameraAndMic = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: true,
-        audio: true,
-      })
-
-      setCameraStream(stream)
-      if (cameraRef.current) {
-        cameraRef.current.srcObject = stream
-      }
-
-      window.__proctoringStreams = {
-        ...window.__proctoringStreams,
-        cameraStream: stream,
-      }
-    } catch (err) {
-      console.error(err)
-      setError('Camera and Microphone permission is required to proceed.')
-    }
-  }
 
   // Screen Sharing
   const enableScreenShare = async () => {
@@ -206,10 +178,6 @@ function SystemCheck() {
   // Validation & Start
   const startAssessment = async () => {
     setError('')
-    if (!cameraStream) {
-      setError('Please enable Camera and Microphone access.')
-      return
-    }
     if (!screenStream) {
       setError('Please share your entire screen.')
       return
@@ -331,7 +299,7 @@ function SystemCheck() {
                 </span>
                 <div>
                   <p className="text-xs font-bold text-[#0D1B2A]">Environment Setup</p>
-                  <p className="text-[11px] text-[#415A77]">Hardware & stream checks</p>
+                  <p className="text-[11px] text-[#415A77]">Screen sharing & verification</p>
                 </div>
               </div>
 
@@ -357,7 +325,7 @@ function SystemCheck() {
               <ul className="space-y-2 text-[#415A77] pl-3.5 list-disc marker:text-[#D4C4A8]">
                 <li>You must share your <strong>entire screen</strong>. Sharing a single window is prohibited.</li>
                 <li>Do not leave full-screen mode or switch tabs once the session begins.</li>
-                <li>Ensure stable internet and proper front-facing lighting.</li>
+                <li>Ensure stable internet throughout the examination.</li>
               </ul>
             </div>
           </aside>
@@ -365,86 +333,51 @@ function SystemCheck() {
           {/* Main Content Area */}
           <main className="flex-1 p-6 md:p-8">
             <div className="mb-6">
-              <h2 className="text-xl font-bold text-[#0D1B2A]">Hardware & Proctoring Verification</h2>
+              <h2 className="text-xl font-bold text-[#0D1B2A]">Proctoring & System Verification</h2>
               <p className="mt-1 text-sm text-[#415A77]">
-                Grant camera, microphone, and entire screen sharing access to validate your environment.
+                Share your entire desktop screen and verify the access code to begin your examination.
               </p>
             </div>
 
-            {/* Media Checks: 2-Column Dark Navy Previews */}
-            <div className="mb-6 grid gap-6 md:grid-cols-2">
-              
-              {/* Camera & Mic Box */}
-              <div className="flex flex-col gap-3">
-                <div className="relative flex aspect-video items-center justify-center rounded-xl bg-[#0D1B2A] text-[#D4C4A8] overflow-hidden border border-[#1B263B] shadow-inner">
-                  {cameraStream ? (
-                    <video ref={cameraRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 p-4 text-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#D4C4A8]/70">
-                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-                        <circle cx="12" cy="13" r="4" />
-                      </svg>
-                      <span className="text-xs font-medium text-[#F4F1DE]/70">Camera & Microphone Preview</span>
-                    </div>
-                  )}
-                  {cameraStream && (
-                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-lg bg-[#1B263B]/90 px-2.5 py-1 text-[11px] font-semibold text-[#F4F1DE] border border-[#778D7A]/40">
-                      <span className="h-2 w-2 rounded-full bg-[#778D7A]" />
-                      <span>Camera & Mic Active</span>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={enableCameraAndMic}
-                  className={`w-full rounded-xl py-2.5 text-xs font-semibold transition-colors duration-200 border ${
-                    cameraStream
-                      ? 'bg-[#EDF2EE] text-[#1B263B] border-[#778D7A]/50 hover:bg-[#E3EDE5]'
-                      : 'bg-[#0D1B2A] text-[#F4F1DE] border-transparent hover:bg-[#1B263B]'
-                  }`}
-                >
-                  {cameraStream ? '✓ Camera & Mic Configured' : 'Enable Camera & Microphone'}
-                </button>
-              </div>
-
-              {/* Screen Share Box */}
-              <div className="flex flex-col gap-3">
-                <div className="relative flex aspect-video items-center justify-center rounded-xl bg-[#0D1B2A] text-[#D4C4A8] overflow-hidden border border-[#1B263B] shadow-inner">
-                  {screenStream ? (
-                    <video ref={screenRef} autoPlay muted playsInline className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-2 p-4 text-center">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#D4C4A8]/70">
+            {/* Screen Share Verification Card */}
+            <div className="mb-6 flex flex-col gap-3">
+              <div className="relative flex aspect-video max-h-72 w-full items-center justify-center rounded-xl bg-[#0D1B2A] text-[#D4C4A8] overflow-hidden border border-[#1B263B] shadow-inner">
+                {screenStream ? (
+                  <video ref={screenRef} autoPlay muted playsInline className="h-full w-full object-contain bg-black/40" />
+                ) : (
+                  <div className="flex flex-col items-center gap-2.5 p-6 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#1B263B] text-[#D4C4A8] border border-[#778D7A]/30">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                         <rect x="2" y="3" width="20" height="14" rx="2" ry="2" />
                         <line x1="8" y1="21" x2="16" y2="21" />
                         <line x1="12" y1="17" x2="12" y2="21" />
                       </svg>
-                      <span className="text-xs font-medium text-[#F4F1DE]/70">Entire Screen Stream Preview</span>
                     </div>
-                  )}
-                  {screenStream && (
-                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5 rounded-lg bg-[#1B263B]/90 px-2.5 py-1 text-[11px] font-semibold text-[#F4F1DE] border border-[#778D7A]/40">
-                      <span className="h-2 w-2 rounded-full bg-[#778D7A]" />
-                      <span>Screen Stream Active</span>
-                    </div>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={enableScreenShare}
-                  className={`w-full rounded-xl py-2.5 text-xs font-semibold transition-colors duration-200 border ${
-                    screenStream
-                      ? 'bg-[#EDF2EE] text-[#1B263B] border-[#778D7A]/50 hover:bg-[#E3EDE5]'
-                      : 'bg-[#0D1B2A] text-[#F4F1DE] border-transparent hover:bg-[#1B263B]'
-                  }`}
-                >
-                  {screenStream ? '✓ Screen Sharing Configured' : 'Share Entire Screen'}
-                </button>
+                    <span className="text-sm font-semibold text-[#F4F1DE]">Entire Screen Stream Preview</span>
+                    <span className="text-xs text-[#D4C4A8]/70 max-w-sm">
+                      Click the button below to share your entire desktop screen before proceeding.
+                    </span>
+                  </div>
+                )}
+                {screenStream && (
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-lg bg-[#1B263B]/90 px-3 py-1.5 text-xs font-semibold text-[#F4F1DE] border border-[#778D7A]/40 shadow-sm">
+                    <span className="h-2 w-2 rounded-full bg-[#778D7A]" />
+                    <span>Screen Stream Active</span>
+                  </div>
+                )}
               </div>
 
+              <button
+                type="button"
+                onClick={enableScreenShare}
+                className={`w-full rounded-xl py-3 text-xs font-semibold transition-colors duration-200 border ${
+                  screenStream
+                    ? 'bg-[#EDF2EE] text-[#1B263B] border-[#778D7A]/50 hover:bg-[#E3EDE5]'
+                    : 'bg-[#0D1B2A] text-[#F4F1DE] border-transparent hover:bg-[#1B263B]'
+                }`}
+              >
+                {screenStream ? '✓ Screen Sharing Configured' : 'Share Entire Screen'}
+              </button>
             </div>
 
             {/* Fullscreen Verification Banner */}

@@ -66,7 +66,7 @@ The design strictly employs the six core tokens from the Holst palette:
 ### 4.3. Examination Room (`/student`)
 * **Structured Three-Part Layout**:
   1. **Left Navigation (Desktop)**:
-     * Monitoring panel: Dual `#0D1B2A` preview boxes for camera and desktop screen with pulsing sage dot.
+     * Monitoring panel: `#0D1B2A` desktop screen preview with pulsing sage dot.
      * Question Palette Matrix: Restrained 4-column grid reflecting exact Holst palette states:
        * **Current**: `#415A77` (muted blue border and soft blue tint)
        * **Answered**: `#778D7A` (muted sage background, cream/white text)
@@ -103,6 +103,6 @@ The design strictly employs the six core tokens from the Holst palette:
 The visual overhaul preserves 100% of underlying application logic:
 * Student `@klu.ac.in` domain verification and student credential lookup.
 * Proctoring event listeners (tab blur with 5s grace period, fullscreen exit, DevTools key combinations, swipe back gesture blocks).
-* Camera and screen share streams persistence via `window.__proctoringStreams`.
+* Screen share stream persistence via `window.__proctoringStreams`.
 * Question shuffling and MCQ option randomization.
 * Database score persistence, duplicate submission prevention, and scoring algorithm.

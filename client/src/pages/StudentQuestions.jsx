@@ -81,26 +81,14 @@ function StudentQuestions() {
     return () => { ignore = true }
   }, [])
 
-  const [hasCameraStream, setHasCameraStream] = useState(() => !!(window.__proctoringStreams && window.__proctoringStreams.cameraStream))
-
   useEffect(() => {
-    // Camera stream tracking
+    // If any legacy camera stream exists, shut it down
     if (window.__proctoringStreams?.cameraStream) {
-      const stream = window.__proctoringStreams.cameraStream;
-      const track = stream.getVideoTracks()[0];
-
-      const handleTrackEnded = () => {
-        if (hasStartedExamRef.current && !isSubmittedRef.current) {
-          handleViolationRef.current?.('Camera stream was stopped manually.')
-        }
-        setHasCameraStream(false)
-      }
-
-      if (track) {
-        track.addEventListener('ended', handleTrackEnded);
-        return () => {
-          track.removeEventListener('ended', handleTrackEnded);
-        }
+      try {
+        window.__proctoringStreams.cameraStream.getTracks().forEach(track => track.stop())
+        window.__proctoringStreams.cameraStream = null
+      } catch (e) {
+        console.warn('Failed to stop legacy camera track:', e)
       }
     }
   }, [])
@@ -695,57 +683,30 @@ function StudentQuestions() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            {/* Camera Preview */}
-            <div className="relative aspect-video overflow-hidden rounded-xl bg-[#0D1B2A] border border-[#1B263B] shadow-inner">
-              <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
-                <span className="text-[9px] font-bold text-[#D4C4A8] uppercase tracking-wider">Camera</span>
-              </div>
-              {hasCameraStream ? (
-                <video
-                  ref={el => {
-                    if (el && window.__proctoringStreams?.cameraStream) {
-                      el.srcObject = window.__proctoringStreams.cameraStream
-                    }
-                  }}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="h-full w-full object-cover opacity-90"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-[9px] text-[#415A77]">Standby</div>
-              )}
-              {hasCameraStream && (
-                <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#778D7A] border border-[#0D1B2A]" />
-              )}
+          {/* Screen Monitor Preview */}
+          <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-[#0D1B2A] border border-[#1B263B] shadow-inner">
+            <div className="absolute top-1.5 left-2 z-10 flex items-center gap-1">
+              <span className="text-[9px] font-bold text-[#D4C4A8] uppercase tracking-wider">Screen</span>
             </div>
-
-            {/* Screen Preview */}
-            <div className="relative aspect-video overflow-hidden rounded-xl bg-[#0D1B2A] border border-[#1B263B] shadow-inner">
-              <div className="absolute top-1 left-1.5 z-10 flex items-center gap-1">
-                <span className="text-[9px] font-bold text-[#D4C4A8] uppercase tracking-wider">Screen</span>
-              </div>
-              {hasScreenStream ? (
-                <video
-                  ref={el => {
-                    if (el && window.__proctoringStreams?.screenStream) {
-                      el.srcObject = window.__proctoringStreams.screenStream
-                    }
-                    screenPreviewRef.current = el
-                  }}
-                  autoPlay
-                  muted
-                  playsInline
-                  className="h-full w-full object-cover opacity-90"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-[9px] text-[#415A77]">Standby</div>
-              )}
-              {hasScreenStream && (
-                <div className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-[#778D7A] border border-[#0D1B2A]" />
-              )}
-            </div>
+            {hasScreenStream ? (
+              <video
+                ref={el => {
+                  if (el && window.__proctoringStreams?.screenStream) {
+                    el.srcObject = window.__proctoringStreams.screenStream
+                  }
+                  screenPreviewRef.current = el
+                }}
+                autoPlay
+                muted
+                playsInline
+                className="h-full w-full object-cover opacity-90"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-[9px] text-[#415A77]">Standby</div>
+            )}
+            {hasScreenStream && (
+              <div className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-[#778D7A] border border-[#0D1B2A]" />
+            )}
           </div>
         </div>
 
